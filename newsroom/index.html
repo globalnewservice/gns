@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>GNS Newsroom (Copy)</title>
+<title>GNS Newsroom</title>
 <meta name="description" content="GNS staff portal: write stories, add a cover image and byline, and send them to management for approval.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,6 +268,15 @@
     <button type="submit" class="btn btn-primary" id="si-btn">Sign in</button>
     <p class="hint" id="si-status">Connecting to the newsroom…</p>
   </form>
+  <form class="card signin" id="setup-form" novalidate hidden style="margin-top:16px">
+    <h1>Create the first account</h1>
+    <p class="hint">No accounts exist yet. This creates the first management account. This form disappears once it exists.</p>
+    <div class="field"><label for="su-name">Full name</label><input type="text" id="su-name" maxlength="80"></div>
+    <div class="field"><label for="su-user">Username</label><input type="text" id="su-user" maxlength="32" autocapitalize="none" spellcheck="false"></div>
+    <div class="field"><label for="su-pass">Password</label><input type="password" id="su-pass" maxlength="64" autocomplete="new-password"></div>
+    <p class="err" id="setup-err" role="alert" hidden></p>
+    <button type="submit" class="btn btn-primary">Create management account</button>
+  </form>
 </section>
 
 <main id="v-app" hidden></main>
@@ -276,6 +285,9 @@
   <div class="dialog-card" id="dialog-card"></div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
 /* ============ constants ============ */
 const SECTIONS = ["U.S.", "Politics", "Global Affairs", "Elections", "Business", "Opinion"];
@@ -327,9 +339,8 @@ function bodyHtml(text) {
 }
 function errText(e) {
   const code = e && e.code;
-  if (code === "invalid_argument") return "Claude didn't let this account save to the newsroom. Ask management to invite you to this page as an Editor.";
-  if (code === "quota_exceeded") return "The newsroom's storage is full. Ask management to clear out old stories.";
-  if (code === "revoked") return "Your access to this page changed. Reload the page.";
+  if (code === "permission-denied") return "The database refused this. Check the Firestore rules in your Firebase project.";
+  if (code === "resource-exhausted") return "The newsroom's free database limit is used up. Try again later.";
   return "That didn't go through. Check your connection and try again.";
 }
 
@@ -339,20 +350,25 @@ const S = { db: null, userCap: null, canWrite: null, accounts: {}, accountsReady
 
 /* ============ boot ============ */
 (async function boot() {
-  const C = window.claude;
-  const db = C && C.use ? await C.use("db") : null;
+  let db = null;
+  try {
+    const cfg = window.GNS_FIREBASE;
+    if (window.firebase && cfg && cfg.projectId && !String(cfg.projectId).startsWith("YOUR")) { firebase.initializeApp(cfg); db = firebase.firestore(); }
+  } catch (e) { db = null; }
   S.db = db;
   if (!db) {
-    $("si-status").textContent = "The newsroom can't connect. Make sure you're signed in to Claude and that management has shared this page with you.";
+    $("si-status").textContent = "The newsroom isn't connected to its database yet. Add your Firebase settings to firebase-config.js.";
     $("si-btn").disabled = true;
     return;
   }
-  S.userCap = C.use ? await C.use("user") : null;
+  S.userCap = null;
   db.collection("accounts").onSnapshot(snap => {
     const map = {};
     snap.docs.forEach(d => { if (d.exists) map[d.id] = { id: d.id, ...d.data() }; });
     S.accounts = map; S.accountsReady = true;
-    $("si-status").textContent = Object.keys(map).length ? "" : "No accounts exist yet. Management sets them up.";
+    const none = !Object.keys(map).length;
+    $("si-status").textContent = none ? "No accounts exist yet. Create the first management account below." : "";
+    $("setup-form").hidden = !none || !!S.me;
     if (S.me) {
       const fresh = map[S.me.id];
       if (!fresh || fresh.active === false || fresh.hash !== S.me.hash) return signOut("Your account was changed by management. Sign in again.");
@@ -382,6 +398,18 @@ $("signin-form").addEventListener("submit", async ev => {
 });
 $("signout").addEventListener("click", () => signOut());
 
+$("setup-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const err = $("setup-err"); err.hidden = true;
+  const name = $("su-name").value.trim(), user = $("su-user").value.trim(), pass = $("su-pass").value;
+  const bad = !name ? "Add your full name." : !/^[A-Za-z0-9_.-]{3,32}$/.test(user) ? "Usernames are 3 to 32 letters, numbers, dots, dashes or underscores." : pass.length < 8 ? "Passwords need at least 8 characters." : Object.keys(S.accounts).length ? "Accounts already exist. Sign in instead." : "";
+  if (bad) { err.textContent = bad; err.hidden = false; return; }
+  try {
+    await S.db.doc("accounts/" + user.toLowerCase()).set({ username: user, name, title: "Management", role: "management", hash: await hashFor(user, pass), active: true, createdAt: new Date().toISOString(), createdBy: "setup" });
+    $("setup-form").hidden = true; $("si-status").textContent = "Account created. Sign in above.";
+  } catch (e) { err.textContent = errText(e); err.hidden = false; }
+});
+
 async function enter(acct) {
   S.me = acct; S.flash = null;
   S.view = isMgmt() ? "review" : "write";
@@ -410,9 +438,9 @@ const draftKey = () => "gns-newsroom-draft-" + (toonMode() ? "toon-" : "") + S.m
 function subscribeSubs() {
   if (S.unsubSubs) S.unsubSubs();
   let q = S.db.collection("submissions");
-  q = isMgmt() ? q.orderBy("submittedAt", "desc").limit(300) : q.where("submittedBy", "==", S.me.id).orderBy("submittedAt", "desc").limit(200);
+  q = isMgmt() ? q.orderBy("submittedAt", "desc").limit(300) : q.where("submittedBy", "==", S.me.id).limit(200);
   S.unsubSubs = q.onSnapshot(snap => {
-    S.subs = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() }));
+    S.subs = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.submittedAt || "").localeCompare(String(a.submittedAt || "")));
     renderChrome();
     if (!isTyping()) render();
     if (S.openId) { const s = S.subs.find(x => x.id === S.openId); if (s) renderDialog(s); }
@@ -446,9 +474,7 @@ function render() {
   if (v === "accounts") wireAccounts();
 }
 function flashHtml() { return S.flash ? `<div class="msg msg-${S.flash.kind}" role="status">${S.flash.text}</div>` : ""; }
-function writeNotice() {
-  return S.canWrite === false ? `<div class="msg msg-warn"><strong>You can read the newsroom but can't send stories yet.</strong> Ask management to invite you to this page as an Editor in Claude.</div>` : "";
-}
+function writeNotice() { return ""; }
 
 /* ============ write ============ */
 function accountsSorted() {
