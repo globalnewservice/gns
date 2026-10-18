@@ -1,11 +1,21 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GNS Newsroom</title>
 <meta name="description" content="GNS staff portal: write stories, add a cover image and byline, and send them to management for approval.">
+
+<!-- Favicons & App Manifest -->
+<link rel="icon" type="image/png" href="./favicon-32.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#18181b">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Fira+Sans+Condensed:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  /* Layout: GNS crimson masthead over a calm working desk; a story form with a sidebar, a review queue of cards, and a preview that looks like the published article. */
   :root {
     --brand: #8e1c13; --brand-deep: #6d140d; --on-brand: #ffffff;
     --bg: #f5f3f1; --surface: #ffffff; --sunk: #efebe8; --ink: #1b1716; --muted: #685f5b; --line: #e2dcd8;
@@ -40,7 +50,8 @@
   /* Masthead */
   .mast { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); color: var(--on-brand); }
   .mast-in { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
-  .logo { display: inline-flex; align-items: baseline; gap: 10px; color: inherit; text-decoration: none; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+  .logo img { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; }
   .logo b { font-weight: 800; font-size: 26px; letter-spacing: 0.02em; line-height: 1; }
   .logo span { font-weight: 500; font-size: 16px; opacity: 0.9; border-left: 1px solid rgba(255,255,255,0.45); padding-left: 10px; }
   .who { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -176,7 +187,7 @@
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-  /* Draft preview: a copy of the main GNS site's article page */
+  /* Draft preview */
   .preview-btn-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
   .pv-note { background: var(--pending-bg); color: var(--pending); font-size: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
   .pv-note strong { color: inherit; }
@@ -245,10 +256,16 @@
   .tip small { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; margin-bottom: 2px; white-space: normal; }
   .tip .linkbtn { font-size: 12px; margin: 0; padding: 0; }
 </style>
+</head>
+<body>
 
 <header class="mast">
   <div class="mast-in">
-    <a class="logo" href="#top" aria-label="GNS Newsroom"><b>GNS</b><span>Newsroom</span></a>
+    <!-- App Logo with Icon Image -->
+    <a class="logo" href="#top" aria-label="GNS Newsroom">
+      <img src="./icon-192.png" alt="GNS Newsroom Logo">
+      <b>GNS</b><span>Newsroom</span>
+    </a>
     <div class="who" id="who" hidden>
       <div class="who-text"><strong id="who-name"></strong><small id="who-title"></small></div>
       <button type="button" class="btn-ghost-light" id="signout">Sign out</button>
@@ -429,688 +446,45 @@ function signOut(message) {
   const err = $("si-err"); err.hidden = !message; err.textContent = message || "";
 }
 const isMgmt = () => S.me && S.me.role === "management";
-const isForm = () => S.view === "write" || S.view === "cartoon";
-const isTyping = () => isForm() || S.view === "edit";
-const editingSub = () => S.editingId ? S.subs.find(s => s.id === S.editingId) || null : null;
-const toonMode = () => { const e = editingSub(); return e ? e.kind === "cartoon" : S.view === "cartoon"; };
-const draftKey = () => "gns-newsroom-draft-" + (toonMode() ? "toon-" : "") + S.me.id;
+const isForm = () => S.view === "write";
 
-function subscribeSubs() {
-  if (S.unsubSubs) S.unsubSubs();
-  let q = S.db.collection("submissions");
-  q = isMgmt() ? q.orderBy("submittedAt", "desc").limit(300) : q.where("submittedBy", "==", S.me.id).limit(200);
-  S.unsubSubs = q.onSnapshot(snap => {
-    S.subs = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.submittedAt || "").localeCompare(String(a.submittedAt || "")));
-    renderChrome();
-    if (!isTyping()) render();
-    if (S.openId) { const s = S.subs.find(x => x.id === S.openId); if (s) renderDialog(s); }
-  }, e => { S.flash = { kind: "warn", text: errText(e) }; render(); });
+function isTyping() {
+  const active = document.activeElement;
+  return active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT");
 }
 
-/* ============ chrome ============ */
+/* ============ chrome & navigation ============ */
 function renderChrome() {
-  $("who-name").textContent = S.me.name; $("who-title").textContent = S.me.title || "";
-  const mine = S.subs.filter(s => s.submittedBy === S.me.id);
-  const pending = S.subs.filter(s => s.status === "pending").length;
-  const boardN = S.batch && !S.batch.sentBy ? S.eds.length : 0;
-  const tabs = isMgmt()
-    ? [["review", "Review queue", pending], ["write", S.editingId && !toonMode() ? "Edit story" : "Write a story"], ["cartoon", S.editingId && toonMode() ? "Edit cartoon" : "Submit a cartoon"], ["board", "Syndicateds", boardN], ["mine", "My submissions", mine.length], ["accounts", "Staff accounts"]]
-    : [["write", S.editingId && !toonMode() ? "Edit story" : "Write a story"], ["cartoon", S.editingId && toonMode() ? "Edit cartoon" : "Submit a cartoon"], ["board", "Syndicateds", boardN], ["mine", "My submissions", mine.length]];
-  $("tabs-in").innerHTML = tabs.map(([id, label, n]) =>
-    `<button type="button" data-view="${id}"${S.view === id || (id === "board" && S.view === "edit") ? ' aria-current="page"' : ""}>${esc(label)}${n ? `<span class="count">${n}</span>` : ""}</button>`).join("");
-}
-$("tabs-in").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return;
-  const next = b.dataset.view;
-  if (S.editingId && (next === "write" || next === "cartoon") && (next === "cartoon") !== toonMode()) { S.editingId = null; S.cover = null; S.coverKept = false; }
-  else if (!S.editingId && isForm() && (next === "write" || next === "cartoon") && next !== S.view) { S.cover = null; S.coverKept = false; }
-  S.view = next; S.flash = null; renderChrome(); render(); window.scrollTo(0, 0); });
+  $("who-name").textContent = S.me.name;
+  $("who-title").textContent = S.me.title || (isMgmt() ? "Management" : "Staff");
 
-function render() {
-  const v = S.view;
-  $("v-app").innerHTML = isForm() ? viewWrite() : v === "board" ? viewBoard() : v === "edit" ? viewEditor() : v === "mine" ? viewMine() : v === "review" ? viewReview() : viewAccounts();
-  if (isForm()) wireWrite();
-  if (v === "board") wireBoard();
-  if (v === "edit") wireEditor();
-  if (v === "accounts") wireAccounts();
-}
-function flashHtml() { return S.flash ? `<div class="msg msg-${S.flash.kind}" role="status">${S.flash.text}</div>` : ""; }
-function writeNotice() { return ""; }
+  const tabs = [
+    ...(S.canWrite !== false ? [{ id: "write", label: "Write story", count: 0 }] : []),
+    { id: "mystories", label: "My stories", count: S.subs.filter(s => s.authorId === S.me.id && s.status !== "published").length },
+    ...(isMgmt() ? [
+      { id: "review", label: "Review queue", count: S.subs.filter(s => s.status === "pending").length },
+      { id: "board", label: "Editorial board", count: S.tips.length },
+      { id: "accounts", label: "Staff accounts", count: Object.keys(S.accounts).length }
+    ] : [])
+  ];
 
-/* ============ write ============ */
-function accountsSorted() {
-  return Object.values(S.accounts).filter(a => a.active !== false).sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "management" ? -1 : 1));
-}
-function viewWrite() {
-  const draft = S.editingId ? null : store.get(draftKey());
-  const d = draft || {};
-  const editing = S.editingId ? S.subs.find(s => s.id === S.editingId) : null;
-  const src = editing || d;
-  if (toonMode()) return `
-  <h1 class="page-title">${editing ? "Edit and resend cartoon" : "Submit a cartoon"}</h1>
-  <p class="lede">${editing ? "Make the changes management asked for, then send it back for review." : "Upload a political cartoon, give it a title and caption, and send it to management. Approved cartoons run in the Cartoons section on GNS."}</p>
-  ${flashHtml()}${writeNotice()}
-  ${editing && editing.reviewNote ? `<div class="msg msg-warn"><strong>Note from ${esc(editing.reviewedByName || "management")}:</strong> ${esc(editing.reviewNote)}</div>` : ""}
-  <form class="write" id="write-form" novalidate>
-    <div class="card write-main">
-      <div class="field"><label for="f-headline">Cartoon title</label><input type="text" id="f-headline" maxlength="120" value="${esc(src.headline || "")}" placeholder="A short, punchy title"></div>
-      <div class="field"><span class="label">Cartoon image</span><div id="cover-zone"></div></div>
-      <div class="field"><label for="f-body">Caption</label><textarea id="f-body" rows="3" maxlength="400" style="min-height:0" placeholder="The line that runs under the cartoon">${esc(src.body || "")}</textarea>
-        <div class="meta-row"><span>Shown under the cartoon on GNS.</span><span id="wc">${words(src.body || "")} words</span></div></div>
-    </div>
-    <div class="write-side">
-      <div class="card side-box">
-        <span class="label" id="byline-label">Cartoonist</span>
-        <input type="text" class="picker-search" id="pick-q" placeholder="Search staff" aria-label="Search staff">
-        <div class="picker" id="picker" role="radiogroup" aria-labelledby="byline-label"></div>
-      </div>
-      <div class="card side-box">
-        <div class="field"><label for="f-tag">Label <span class="hint" style="font-weight:400">(optional)</span></label><input type="text" id="f-tag" maxlength="30" value="${esc(src.tag || "")}" placeholder="e.g. Satire"></div>
-      </div>
-      <div class="send-row">
-        <p class="err" id="w-err" role="alert" hidden></p>
-        <button type="button" class="btn" id="w-preview">Preview on GNS</button>
-        <button type="submit" class="btn btn-primary" id="w-send">${editing ? "Resend to management" : "Send to management"}</button>
-        ${editing ? `<button type="button" class="btn" id="w-cancel">Cancel editing</button>` : `<p class="hint">Your title and caption save on this device as you type.</p>`}
-      </div>
-    </div>
-  </form>`;
-  return `
-  <h1 class="page-title">${editing ? "Edit and resend" : "Write a story"}</h1>
-  <p class="lede">${editing ? "Make the changes management asked for, then send it back for review." : "Write your story, add a cover image, pick who wrote it, and send it to management. Approved stories run on the GNS site."}</p>
-  ${flashHtml()}${writeNotice()}
-  ${editing && editing.reviewNote ? `<div class="msg msg-warn"><strong>Note from ${esc(editing.reviewedByName || "management")}:</strong> ${esc(editing.reviewNote)}</div>` : ""}
-  <form class="write" id="write-form" novalidate>
-    <div class="card write-main">
-      <div class="field"><label for="f-headline">Headline</label><input type="text" id="f-headline" maxlength="160" value="${esc(src.headline || "")}" placeholder="What happened, in one line"></div>
-      <div class="field"><label for="f-dek">Subheadline <span class="hint" style="font-weight:400">(optional)</span></label><input type="text" id="f-dek" maxlength="240" value="${esc(src.dek || "")}" placeholder="One sentence that sells the story"></div>
-      <div class="field">
-        <label for="f-body">Story</label>
-        <textarea id="f-body" placeholder="Start writing…">${esc(src.body || "")}</textarea>
-        <div class="meta-row"><span>Leave a blank line between paragraphs. Start a line with ## for a subheading, or &gt; for a pull quote.</span><span id="wc">${words(src.body || "")} words</span></div>
-      </div>
-    </div>
-    <div class="write-side">
-      <div class="card side-box">
-        <span class="label" id="byline-label">Byline: who wrote it</span>
-        <input type="text" class="picker-search" id="pick-q" placeholder="Search staff" aria-label="Search staff">
-        <div class="picker" id="picker" role="radiogroup" aria-labelledby="byline-label"></div>
-      </div>
-      <div class="card side-box">
-        <div class="two">
-          <div class="field"><label for="f-section">Section</label><select id="f-section">${SECTIONS.map(s => `<option${(src.section || "Politics") === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select></div>
-          <div class="field"><label for="f-tag">Label <span class="hint" style="font-weight:400">(optional)</span></label><input type="text" id="f-tag" maxlength="30" value="${esc(src.tag || "")}" placeholder="e.g. Op-Ed"></div>
-        </div>
-      </div>
-      <div class="card side-box">
-        <span class="label">Cover image <span class="hint" style="font-weight:400">(optional)</span></span>
-        <div id="cover-zone"></div>
-        <div class="field"><label for="f-credit" class="hint" style="font-weight:600">Photo caption or credit</label><input type="text" id="f-credit" maxlength="140" value="${esc(src.coverCredit || "")}" placeholder="e.g. Photographed by Henry Reyes"></div>
-      </div>
-      <div class="send-row">
-        <p class="err" id="w-err" role="alert" hidden></p>
-        <button type="button" class="btn" id="w-preview">Preview on GNS</button>
-        <button type="submit" class="btn btn-primary" id="w-send">${editing ? "Resend to management" : "Send to management"}</button>
-        ${editing ? `<button type="button" class="btn" id="w-cancel">Cancel editing</button>` : `<p class="hint">Your draft saves on this device as you type.</p>`}
-      </div>
-    </div>
-  </form>`;
-}
-function refreshPicker() {
-  const box = $("picker"); if (!box) return;
-  const q = ($("pick-q").value || "").trim().toLowerCase();
-  const cur = box.querySelector("input:checked")?.value || box.dataset.sel || S.me.id;
-  const list = accountsSorted().filter(a => !q || (a.name + " " + (a.title || "")).toLowerCase().includes(q));
-  box.dataset.sel = cur;
-  box.innerHTML = list.length ? list.map(a => `<label><input type="radio" name="author" value="${esc(a.id)}"${a.id === cur ? " checked" : ""}><span><span class="pn">${esc(a.name)}</span><span class="pt">${esc(a.title || "")}</span></span></label>`).join("")
-    : `<p class="none">No one matches "${esc(q)}".</p>`;
-}
-function renderCoverZone() {
-  const z = $("cover-zone"); if (!z) return;
-  const toon = toonMode();
-  if (S.cover) {
-    z.innerHTML = `<div class="${toon ? "toon-prev" : "cover-prev"}"><img src="${S.cover}" alt="${toon ? "Cartoon preview" : "Cover image preview"}"><button type="button" id="cover-remove">Remove</button></div>`;
-    $("cover-remove").onclick = () => { S.cover = null; S.coverKept = false; renderCoverZone(); };
-  } else {
-    z.innerHTML = `<label class="drop${toon ? " toon-drop" : ""}" id="drop" for="f-cover"><span><strong>${toon ? "Add the cartoon" : "Add a photo"}</strong><br>Tap to choose, or drop an image here</span><input type="file" id="f-cover" accept="image/*" hidden></label>`;
-    $("f-cover").onchange = e => { const f = e.target.files && e.target.files[0]; if (f) loadCover(f); };
-    const drop = $("drop");
-    drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
-    drop.ondragleave = () => drop.classList.remove("over");
-    drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) loadCover(f); };
-  }
-}
-async function loadCover(file) {
-  const err = $("w-err");
-  if (!file.type.startsWith("image/")) { err.textContent = "That file isn't an image. Choose a JPG, PNG or WEBP."; err.hidden = false; return; }
-  try {
-    const url = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
-    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    let w = Math.min(toonMode() ? 1600 : 1400, img.naturalWidth), q = 0.82, out = "";
-    for (let tries = 0; tries < 12; tries++) {
-      const h = Math.round(img.naturalHeight * w / img.naturalWidth);
-      const c = document.createElement("canvas"); c.width = w; c.height = h;
-      c.getContext("2d").drawImage(img, 0, 0, w, h);
-      out = c.toDataURL("image/jpeg", q);
-      if (out.length <= COVER_BUDGET) break;
-      if (q > 0.55) q -= 0.08; else w = Math.round(w * 0.82);
-    }
-    if (out.length > COVER_BUDGET) throw new Error("too big");
-    S.cover = out; S.coverKept = false; err.hidden = true; renderCoverZone();
-  } catch (e) { err.textContent = "That image couldn't be used. Try a different photo."; err.hidden = false; }
-}
-let draftTimer = null;
-function saveDraft() {
-  if (S.editingId) return;
-  clearTimeout(draftTimer);
-  const key = draftKey();
-  draftTimer = setTimeout(() => { if ($("write-form")) store.set(key, readForm()); }, 500);
-}
-function readForm() {
-  const val = id => $(id) ? $(id).value : "";
-  const toon = toonMode();
-  return { kind: toon ? "cartoon" : "story", headline: val("f-headline").trim(), dek: toon ? "" : val("f-dek").trim(), body: val("f-body"), section: toon ? "Cartoons" : val("f-section"),
-           tag: val("f-tag").trim(), coverCredit: toon ? "" : val("f-credit").trim(), author: $("picker").querySelector("input:checked")?.value || "" };
-}
-async function wireWrite() {
-  refreshPicker();
-  const editing = S.editingId ? S.subs.find(s => s.id === S.editingId) : null;
-  if (editing) {
-    if (editing.hasCover && !S.cover) { try { const c = await S.db.doc("covers/" + editing.id).get(); if (c.exists) { S.cover = c.data().dataUrl; S.coverKept = true; } } catch (e) {} }
-    const r = $("picker").querySelector(`input[value="${CSS.escape(editing.authorId)}"]`); if (r) r.checked = true;
-    $("w-cancel").onclick = () => { S.editingId = null; S.cover = null; S.view = "mine"; renderChrome(); render(); };
-  } else {
-    const d = store.get(draftKey());
-    if (d && d.author) { const r = $("picker").querySelector(`input[value="${CSS.escape(d.author)}"]`); if (r) r.checked = true; }
-  }
-  renderCoverZone();
-  $("pick-q").oninput = refreshPicker;
-  $("picker").onchange = e => { $("picker").dataset.sel = e.target.value; saveDraft(); };
-  $("f-body").oninput = () => { $("wc").textContent = words($("f-body").value) + " words"; saveDraft(); };
-  ["f-headline", "f-dek", "f-tag", "f-credit", "f-section"].forEach(id => { if ($(id)) $(id).addEventListener("input", saveDraft); });
-  $("write-form").onsubmit = submitStory;
-  $("w-preview").onclick = openDraftPreview;
-}
+  const html = tabs.map(t => `
+    <button type="button" data-view="${t.id}" ${S.view === t.id ? 'aria-current="page"' : ''}>
+      ${esc(t.label)}
+      ${t.count ? `<span class="count">${t.count}</span>` : ''}
+    </button>
+  `).join("");
 
-/* ============ draft preview (main GNS site look) ============ */
-function gnsDate(d) {
-  try {
-    const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
-    return p.replace(/,(?= \d{1,2}:)/, "").replace(" at ", " ") + " EST";
-  } catch (e) { return d.toDateString(); }
-}
-function gnsBodyHtml(text) {
-  const blocks = String(text).replace(/\r/g, "").split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
-  return blocks.map(b => {
-    if (b.startsWith("## ")) return `<h2 class="gp-sub">${esc(b.slice(3))}</h2>`;
-    if (b.startsWith("> ")) return `<blockquote>${b.replace(/^> ?/gm, "").split("\n").filter(Boolean).map(l => `<p>${esc(l)}</p>`).join("")}</blockquote>`;
-    return `<p>${esc(b).replace(/\n/g, "<br>")}</p>`;
-  }).join("");
-}
-function missingParts(f) {
-  if (f.kind === "cartoon") return [!f.headline && "a title", !S.cover && "the cartoon image", !f.body.trim() && "a caption", !S.accounts[f.author] && "the cartoonist"].filter(Boolean);
-  return [!f.headline && "a headline", words(f.body) < 30 && "at least 30 words", !S.accounts[f.author] && "a byline"].filter(Boolean);
-}
-function openDraftPreview() {
-  const f = readForm();
-  const author = S.accounts[f.author];
-  const missing = missingParts(f);
-  const toon = f.kind === "cartoon";
-  dialogReturn = document.activeElement; S.openId = null;
-  const nav = [...SECTIONS, "Cartoons"].map(s => `<span class="${s === f.section ? "on" : ""}">${esc(s)}</span>`).join("");
-  const article = toon ? `
-      <article class="gp-article">
-        <h1 id="d-title"${f.headline ? "" : ' class="ph"'}>${esc(f.headline || "Your cartoon title")}</h1>
-        <figure class="gp-toon">${S.cover ? `<img src="${S.cover}" alt="${esc(f.headline)}">` : `<span class="ph">Your cartoon goes here</span>`}</figure>
-        <p class="gp-caption${f.body.trim() ? "" : " ph"}">${esc(f.body.trim() || "Your caption goes here")}</p>
-        <div class="gp-meta">
-          <div><p>Cartoon by ${author ? esc(author.name) + (author.title ? ", " + esc(author.title) : "") : "(pick the cartoonist)"}</p><p>Published on ${gnsDate(new Date())}</p></div>
-          ${f.tag ? `<div class="gp-tag">${esc(f.tag)}</div>` : ""}
-        </div>
-        <span class="gp-back">More cartoons</span>
-      </article>` : null;
-  $("dialog-card").innerHTML = `
-    <div class="dialog-bar">
-      <span class="chip pending">Preview</span>
-      <span class="meta">This is how your ${toon ? "cartoon" : "story"} will look on the GNS site.</span>
-      <button type="button" class="btn" id="d-close">Keep editing</button>
-      <button type="button" class="btn btn-primary" id="d-send">${S.editingId ? "Resend to management" : "Send to management"}</button>
-    </div>
-    ${missing.length ? `<div class="pv-note"><strong>Before you can send it:</strong> add ${missing.join(", ").replace(/, ([^,]*)$/, " and $1")}.</div>` : ""}
-    <div class="gp">
-      <div class="gp-mast"><div class="gp-bar">
-        <span class="gp-logo"><b>GNS</b><svg width="40" height="18" viewBox="0 0 40 18" aria-hidden="true"><rect x="2" y="1" width="20" height="9" rx="4.5" fill="#fff"/><rect x="14" y="7" width="22" height="10" rx="5" fill="#fff"/></svg></span>
-        <nav class="gp-nav" aria-hidden="true">${nav}</nav>
-      </div></div>
-      ${article || `<article class="gp-article">
-        <h1 id="d-title"${f.headline ? "" : ' class="ph"'}>${esc(f.headline || "Your headline goes here")}</h1>
-        ${f.dek ? `<p class="gp-dek">${esc(f.dek)}</p>` : ""}
-        ${S.cover ? `<div class="gp-photo"><img src="${S.cover}" alt="${esc(f.headline)}"></div>${f.coverCredit ? `<p class="gp-credit">${esc(f.coverCredit)}</p>` : ""}` : ""}
-        <div class="gp-meta">
-          <div><p>By ${author ? esc(author.name) + (author.title ? ", " + esc(author.title) : "") : "(pick a byline)"}</p><p>Published on ${gnsDate(new Date())}</p></div>
-          ${f.tag ? `<div class="gp-tag">${esc(f.tag)}</div>` : ""}
-        </div>
-        <div class="gp-body">${f.body.trim() ? gnsBodyHtml(f.body) : `<p class="ph">Your story will appear here.</p>`}</div>
-        <span class="gp-back">Back to the front page</span>
-      </article>`}
-      <div class="gp-foot" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><strong>GNS</strong><span>&copy; 2026 GNS. All rights reserved.</span></div>
-    </div>`;
-  $("d-close").onclick = closeDialog;
-  $("d-send").onclick = () => {
-    closeDialog();
-    const form = $("write-form");
-    if (form.requestSubmit) form.requestSubmit($("w-send")); else submitStory({ preventDefault() {} });
-    if (!$("w-err").hidden) $("w-err").scrollIntoView({ block: "center", behavior: "smooth" });
-  };
-  $("dialog").hidden = false; document.body.style.overflow = "hidden"; $("dialog").scrollTop = 0;
-  $("d-close").focus({ preventScroll: true });
-}
-async function submitStory(ev) {
-  ev.preventDefault();
-  const f = readForm(), err = $("w-err"); err.hidden = true;
-  const missing = f.kind === "cartoon"
-    ? (!f.headline ? "Add a title." : !S.cover ? "Add the cartoon image." : !f.body.trim() ? "Add a caption." : !S.accounts[f.author] ? "Pick the cartoonist." : "")
-    : (!f.headline ? "Add a headline." : words(f.body) < 30 ? "The story needs at least 30 words." : !S.accounts[f.author] ? "Pick who wrote it from the byline list." : "");
-  if (missing) { err.textContent = missing; err.hidden = false; return; }
-  const author = S.accounts[f.author];
-  const btn = $("w-send"); btn.disabled = true; btn.textContent = "Sending…";
-  try {
-    const ref = S.editingId ? S.db.doc("submissions/" + S.editingId) : S.db.collection("submissions").doc();
-    if (S.cover && !S.coverKept) await S.db.doc("covers/" + ref.id).set({ dataUrl: S.cover, by: S.me.id });
-    if (!S.cover && S.editingId) { try { await S.db.doc("covers/" + ref.id).delete(); } catch (e) {} }
-    const now = new Date().toISOString();
-    const data = { kind: f.kind, headline: f.headline, dek: f.dek, body: f.body, section: f.section, tag: f.tag, coverCredit: f.coverCredit,
-                   hasCover: !!S.cover, authorId: author.id, authorName: author.name, authorTitle: author.title || "",
-                   words: words(f.body), status: "pending", reviewNote: "", updatedAt: now };
-    if (S.editingId) { data.resubmittedAt = now; await ref.update(data); }
-    else { Object.assign(data, { submittedBy: S.me.id, submittedByName: S.me.name, submittedAt: now }); await ref.set(data); store.del(draftKey()); }
-    S.flash = { kind: "ok", text: `<strong>Sent to management.</strong> ${f.kind === "cartoon" ? "Your cartoon" : ""} “${esc(f.headline)}” is waiting for review. Track it under My submissions.` };
-    S.editingId = null; S.cover = null; S.coverKept = false;
-    renderChrome(); render(); window.scrollTo(0, 0);
-  } catch (e) {
-    err.textContent = errText(e); err.hidden = false; btn.disabled = false; btn.textContent = S.editingId ? "Resend to management" : "Send to management";
-  }
-}
-
-/* ============ lists ============ */
-function itemHtml(s, showSubmitter) {
-  const when = s.status === "pending" ? `Sent ${fmt(s.resubmittedAt || s.submittedAt)}` : s.reviewedAt ? `${s.status === "published" ? "Published" : s.status === "approved" ? "Approved" : "Sent back"} ${fmt(s.publishedAt || s.reviewedAt)}${s.reviewedByName ? " by " + esc(s.reviewedByName) : ""}` : "";
-  return `<button type="button" class="item" data-open="${esc(s.id)}">
-    <h3>${esc(s.headline)}</h3><span class="chip ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span>
-    <span class="sub">${s.kind === "cartoon" ? "Cartoon by" : "By"} ${esc(s.authorName)} · ${esc(s.section)}${showSubmitter && s.submittedByName && s.submittedByName !== s.authorName ? ` · sent by ${esc(s.submittedByName)}` : ""} · ${when}</span>
-    ${s.status === "returned" && s.reviewNote ? `<span class="note"><strong>Note:</strong> ${esc(s.reviewNote)}</span>` : ""}
-  </button>`;
-}
-function viewMine() {
-  const mine = S.subs.filter(s => s.submittedBy === S.me.id);
-  return `<h1 class="page-title">My submissions</h1>
-  <p class="lede">Everything you've sent to management and where it stands. Stories that come back with a note can be edited and resent.</p>
-  ${flashHtml()}
-  <div class="list" id="list">${mine.length ? mine.map(s => itemHtml(s, false)).join("") : `<div class="card empty"><strong>Nothing sent yet</strong>Stories you send to management show up here with their status.</div>`}</div>`;
-}
-function viewReview() {
-  const counts = { pending: 0, approved: 0, returned: 0, published: 0 };
-  S.subs.forEach(s => { if (counts[s.status] !== undefined) counts[s.status]++; });
-  const shown = S.subs.filter(s => s.status === S.filter);
-  const labels = { pending: "Waiting for review", approved: "Approved", returned: "Sent back", published: "Live on GNS" };
-  const emptyText = { pending: ["You're all caught up", "New stories from staff land here."], approved: ["Nothing queued", "Stories you approve wait here until they go live on GNS, within the hour."],
-                      returned: ["Nothing sent back", "Stories you return with a note show up here until the writer resends them."], published: ["Nothing published yet", "Stories that are live on the GNS site show up here."] };
-  return `<h1 class="page-title">Review queue</h1>
-  <p class="lede">Open a story to read it as it will appear on GNS, then approve it or send it back with a note. You and the other managers can both approve.</p>
-  ${flashHtml()}
-  ${counts.approved ? `<div class="msg msg-info"><strong>${counts.approved} approved ${counts.approved === 1 ? "story is" : "stories are"} queued for the GNS site.</strong> They go live automatically within the hour, then move to Live on GNS here.</div>` : ""}
-  <div class="filters" role="group" aria-label="Filter stories">${Object.keys(labels).map(k => `<button type="button" data-filter="${k}" aria-pressed="${S.filter === k}">${labels[k]} <span class="n">${counts[k]}</span></button>`).join("")}</div>
-  <div class="list" id="list">${shown.length ? shown.map(s => itemHtml(s, true)).join("") : `<div class="card empty"><strong>${emptyText[S.filter][0]}</strong>${emptyText[S.filter][1]}</div>`}</div>`;
-}
-$("v-app").addEventListener("click", e => {
-  const f = e.target.closest("[data-filter]"); if (f) { S.filter = f.dataset.filter; S.flash = null; render(); return; }
-  const o = e.target.closest("[data-open]"); if (o) openDialog(o.dataset.open);
-});
-
-/* ============ preview + review ============ */
-let dialogReturn = null;
-async function openDialog(id) {
-  const s = S.subs.find(x => x.id === id); if (!s) return;
-  S.openId = id; dialogReturn = document.activeElement;
-  renderDialog(s);
-  $("dialog").hidden = false; document.body.style.overflow = "hidden";
-  $("d-close").focus({ preventScroll: true });
-  if (s.hasCover) {
-    try { const c = await S.db.doc("covers/" + id).get(); if (c.exists && S.openId === id) { const box = $("d-cover"); if (box) box.innerHTML = `<img src="${c.data().dataUrl}" alt="${esc(s.headline)}">`; } } catch (e) {}
-  }
-}
-function closeDialog() {
-  $("dialog").hidden = true; document.body.style.overflow = ""; S.openId = null;
-  if (dialogReturn && document.contains(dialogReturn)) dialogReturn.focus({ preventScroll: true });
-}
-function renderDialog(s) {
-  const prevImg = $("d-cover")?.innerHTML || "";
-  const canReview = isMgmt();
-  const own = s.submittedBy === S.me.id;
-  let actions = "";
-  if (canReview && s.status === "pending") {
-    actions = `<section class="review" aria-labelledby="rv-h"><h2 id="rv-h">Your decision</h2>
-      <div class="field"><label for="rv-note">Note to the writer <span class="hint" style="font-weight:400">(needed if you send it back)</span></label><textarea id="rv-note" rows="3" placeholder="What needs to change?"></textarea></div>
-      <p class="err" id="rv-err" role="alert" hidden></p>
-      <div class="actions"><button type="button" class="btn btn-ok" data-act="approve">Approve for GNS</button><button type="button" class="btn" data-act="return">Send back with note</button></div></section>`;
-  } else if (canReview && s.status === "approved") {
-    actions = `<section class="review"><h2>Approved by ${esc(s.reviewedByName || "management")}</h2><p class="hint" style="margin:0">Queued for the GNS site. It goes live automatically within the hour.</p>
-      <p class="err" id="rv-err" role="alert" hidden></p><div class="actions"><button type="button" class="btn" data-act="unapprove">Move back to review</button></div></section>`;
-  } else if (own && s.status === "returned") {
-    actions = `<section class="review"><h2>Sent back by ${esc(s.reviewedByName || "management")}</h2><p style="margin:0">${esc(s.reviewNote)}</p><div class="actions"><button type="button" class="btn btn-primary" data-act="edit">Edit and resend</button></div></section>`;
-  } else if (s.status === "returned" && s.reviewNote) {
-    actions = `<section class="review"><h2>Sent back by ${esc(s.reviewedByName || "management")}</h2><p style="margin:0">${esc(s.reviewNote)}</p></section>`;
-  }
-  $("dialog-card").innerHTML = `
-    <div class="dialog-bar">
-      <span class="chip ${esc(s.status)}">${esc(STATUS[s.status] || s.status)}</span>
-      <span class="meta">Sent by ${esc(s.submittedByName || "")} ${fmt(s.resubmittedAt || s.submittedAt)}${s.kind === "cartoon" ? " · Cartoon" : ` · ${s.words || words(s.body)} words`}</span>
-      <button type="button" class="btn" id="d-close">Close</button>
-    </div>
-    ${s.kind === "cartoon" ? `<article class="art">
-      <p class="kicker">Cartoons${s.tag ? " · " + esc(s.tag) : ""}</p>
-      <h1 id="d-title">${esc(s.headline)}</h1>
-      <div class="cover toon" id="d-cover">${prevImg}</div>
-      <p class="toon-caption">${esc(s.body)}</p>
-      <div class="byline" style="margin-top:18px"><span>Cartoon by ${esc(s.authorName)}${s.authorTitle ? ", " + esc(s.authorTitle) : ""}</span><span>${s.status === "published" ? "Published " + fmt(s.publishedAt) : "Not yet published"}</span></div>
-    </article>` : `<article class="art">
-      <p class="kicker">${esc(s.section)}${s.tag ? " · " + esc(s.tag) : ""}</p>
-      <h1 id="d-title">${esc(s.headline)}</h1>
-      ${s.dek ? `<p class="dek">${esc(s.dek)}</p>` : ""}
-      ${s.hasCover ? `<div class="cover" id="d-cover">${prevImg}</div>${s.coverCredit ? `<p class="credit">${esc(s.coverCredit)}</p>` : ""}` : ""}
-      <div class="byline"><span>By ${esc(s.authorName)}${s.authorTitle ? ", " + esc(s.authorTitle) : ""}</span><span>${s.status === "published" ? "Published " + fmt(s.publishedAt) : "Not yet published"}</span></div>
-      <div class="body">${bodyHtml(s.body)}</div>
-    </article>`}
-    ${actions}`;
-  $("d-close").onclick = closeDialog;
-  $("dialog-card").querySelectorAll("[data-act]").forEach(b => b.onclick = () => act(s, b.dataset.act, b));
-}
-async function act(s, what, btn) {
-  const err = $("rv-err");
-  if (what === "edit" && s.kind === "editorial") { closeDialog(); S.edOpen = { type: "resend", id: s.id }; S.view = "edit"; renderChrome(); render(); window.scrollTo(0, 0); return; }
-  if (what === "edit") { closeDialog(); S.editingId = s.id; S.cover = null; S.view = s.kind === "cartoon" ? "cartoon" : "write"; renderChrome(); render(); window.scrollTo(0, 0); return; }
-  const now = new Date().toISOString();
-  let patch;
-  if (what === "approve") patch = { status: "approved", reviewNote: "", reviewedBy: S.me.id, reviewedByName: S.me.name, reviewedAt: now };
-  if (what === "unapprove") patch = { status: "pending", reviewedBy: "", reviewedByName: "", reviewedAt: "" };
-  if (what === "return") {
-    const note = ($("rv-note").value || "").trim();
-    if (!note) { err.textContent = "Write a note so the writer knows what to fix."; err.hidden = false; $("rv-note").focus(); return; }
-    patch = { status: "returned", reviewNote: note, reviewedBy: S.me.id, reviewedByName: S.me.name, reviewedAt: now };
-  }
-  btn.disabled = true;
-  try {
-    await S.db.doc("submissions/" + s.id).update(patch);
-    S.flash = { kind: "ok", text: what === "approve" ? `<strong>Approved.</strong> ${s.kind === "cartoon" ? "The cartoon " : ""}“${esc(s.headline)}” is queued and will go live on GNS within the hour.` : what === "return" ? `<strong>Sent back.</strong> ${esc(s.authorName)}'s story is waiting on their changes.` : `<strong>Moved back to review.</strong>` };
-    closeDialog(); render();
-  } catch (e) { if (err) { err.textContent = errText(e); err.hidden = false; } btn.disabled = false; }
-}
-$("dialog").addEventListener("click", e => { if (e.target === $("dialog")) closeDialog(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("dialog").hidden) closeDialog(); });
-
-/* ============ editorial board ============ */
-const ED_BYLINE = "GNS Editorial Team";
-const ED_SECTION = "Editorial Pieces";
-function unsubscribeBoard() {
-  (S.unsubBoard || []).forEach(u => { try { u(); } catch (e) {} });
-  S.unsubBoard = [];
-  if (S.unsubEds) { try { S.unsubEds(); } catch (e) {} S.unsubEds = null; }
-}
-function boardChanged() {
-  renderChrome();
-  if (S.view === "board") render();
-  else if (S.view === "edit") { const box = $("ed-lock"); if (box) box.innerHTML = edLockHtml(); const b = $("ed-send"); if (b && edLocked()) b.disabled = true; }
-}
-function subscribeBoard() {
-  unsubscribeBoard();
-  const onErr = e => { if (S.view === "board") { S.flash = { kind: "warn", text: errText(e) }; render(); } };
-  S.unsubBoard.push(S.db.collection("editorialBatches").orderBy("createdAt", "desc").limit(1).onSnapshot(snap => {
-    const d = snap.docs.find(x => x.exists);
-    const b = d ? { id: d.id, ...d.data() } : null;
-    const changed = (b && b.id) !== (S.batch && S.batch.id);
-    S.batch = b;
-    if (changed) {
-      if (S.unsubEds) { S.unsubEds(); S.unsubEds = null; }
-      S.eds = [];
-      if (b) S.unsubEds = S.db.collection("editorials").where("batch", "==", b.id).onSnapshot(s2 => {
-        S.eds = s2.docs.filter(x => x.exists).map(x => ({ id: x.id, ...x.data() })).sort((p, q) => (p.n || 0) - (q.n || 0));
-        boardChanged();
-      }, onErr);
-    }
-    boardChanged();
-  }, onErr));
-  S.unsubBoard.push(S.db.collection("tips").orderBy("at", "desc").limit(20).onSnapshot(snap => {
-    S.tips = snap.docs.filter(x => x.exists).map(x => ({ id: x.id, ...x.data() }));
-    const box = $("tip-list"); if (box) box.innerHTML = tipsHtml();
-  }, () => {}));
-}
-function tipsHtml() {
-  if (!S.tips.length) return `<p class="hint" style="padding-top:8px">No tips yet. Paste the first one above.</p>`;
-  return S.tips.slice(0, 10).map(t => `<div class="tip"><small><span>${esc(t.byName || "")} · ${fmt(t.at)}</span>${isMgmt() || t.by === S.me.id ? `<button type="button" class="linkbtn" data-tipdel="${esc(t.id)}">Remove</button>` : ""}</small>${esc(t.text)}</div>`).join("");
-}
-function edChip(e) {
-  if (e.status === "sent") return `<span class="chip sent">Sent to management</span>`;
-  if (e.claimedByName) return `<span class="chip claimed">${esc(e.claimedByName)} is editing</span>`;
-  return `<span class="chip open">Open</span>`;
-}
-function viewBoard() {
-  const b = S.batch, locked = !!(b && b.sentBy);
-  const lock = locked ? `<div class="msg msg-ok"><strong>This hour's syndicated is in.</strong> ${esc(b.sentByName || "A staff member")} sent “${esc(b.headline || "a syndicated")}” to management ${fmt(b.sentAt)}. A fresh set of 10 arrives at the top of the hour.</div>` : "";
-  const cards = !b ? `<div class="card empty"><strong>No syndicateds yet</strong>A set of 10 arrives at the top of each hour, written from the news tips on this page. Add a few tips so there's news to write about.</div>`
-    : S.eds.map(e => `<button type="button" class="item" data-ed="${esc(e.id)}"${locked ? " disabled" : ""}>
-        <h3>${esc(e.headline)}</h3>${edChip(e)}
-        <span class="sub">${(e.checks || []).length} mistakes to fix · ${words(e.body || "")} words</span></button>`).join("");
-  return `<h1 class="page-title">Syndicateds</h1>
-  <p class="lede">Every hour, 10 pre-written syndicateds based on the latest news from the Bloxburg Politics Discord land here. Each one has deliberate mistakes. Open one, fix every mistake, tick off its checklist, and send it to management. Only one syndicated goes to management each hour: the first one sent wins, and the board locks until the next set arrives. Approved syndicateds run in Editorial Pieces under the GNS Editorial Team byline.</p>
-  ${flashHtml()}${writeNotice()}${lock}
-  <div class="board">
-    <div class="list">${cards}</div>
-    <form class="card side-box" id="tip-form" novalidate>
-      <label class="label" for="tip-text">News tips from the Discord</label>
-      <p class="hint">Paste announcements, election results, new bills, resignations and other news from the Bloxburg Politics Discord. Each hour's syndicateds are written from the newest tips.</p>
-      <textarea id="tip-text" rows="5" maxlength="2000" placeholder="e.g. Speaker of the House announced a vote on the Budget Act for Saturday at 5 PM EST…">${esc(S.tipDraft)}</textarea>
-      <p class="err" id="tip-err" role="alert" hidden></p>
-      <button type="submit" class="btn btn-primary">Add tip</button>
-      <div class="tips" id="tip-list">${tipsHtml()}</div>
-    </form>
-  </div>`;
-}
-function wireBoard() {
-  $("tip-text").oninput = e => { S.tipDraft = e.target.value; };
-  $("tip-form").onsubmit = async ev => {
-    ev.preventDefault();
-    const text = $("tip-text").value.trim(), err = $("tip-err"); err.hidden = true;
-    if (text.length < 15) { err.textContent = "Add a bit more detail so there's something to write about."; err.hidden = false; return; }
-    try {
-      await S.db.collection("tips").doc().set({ text, by: S.me.id, byName: S.me.name, at: new Date().toISOString() });
-      S.tipDraft = ""; $("tip-text").value = "";
-    } catch (e) { err.textContent = errText(e); err.hidden = false; }
-  };
-  $("tip-list").onclick = async e => {
-    const b = e.target.closest("[data-tipdel]"); if (!b) return;
-    b.disabled = true;
-    try { await S.db.doc("tips/" + b.dataset.tipdel).delete(); } catch (x) { b.disabled = false; }
-  };
-  $("v-app").querySelectorAll("[data-ed]").forEach(b => b.onclick = () => openEditorial(b.dataset.ed));
-}
-function openEditorial(id) {
-  const e = S.eds.find(x => x.id === id); if (!e) return;
-  S.edOpen = { type: "draft", id }; S.view = "edit"; S.flash = null;
-  if (e.status !== "sent" && e.claimedBy !== S.me.id) {
-    S.db.doc("editorials/" + id).update({ claimedBy: S.me.id, claimedByName: S.me.name, claimedAt: new Date().toISOString() }).catch(() => {});
-  }
-  renderChrome(); render(); window.scrollTo(0, 0);
-}
-function edSource() {
-  const o = S.edOpen; if (!o) return null;
-  return o.type === "draft" ? S.eds.find(x => x.id === o.id) || null : S.subs.find(x => x.id === o.id) || null;
-}
-const edKey = () => "gns-editorial-draft-" + S.me.id + "-" + (S.edOpen ? S.edOpen.id : "");
-function edLocked() {
-  const o = S.edOpen; if (!o || o.type !== "draft") return false;
-  const e = edSource();
-  return !e || !S.batch || S.batch.id !== e.batch || !!S.batch.sentBy;
-}
-function edLockHtml() {
-  if (!edLocked()) return "";
-  const b = S.batch;
-  if (b && b.sentBy) return `<div class="msg msg-warn"><strong>This hour's syndicated has already been sent</strong> by ${esc(b.sentByName || "another staff member")}. You can't send this one. A fresh set arrives at the top of the hour.</div>`;
-  return `<div class="msg msg-warn"><strong>This set has been replaced.</strong> Go back to the board to pick from the new syndicateds.</div>`;
-}
-function viewEditor() {
-  const src = edSource();
-  if (!src) return `<div class="card empty"><strong>That syndicated isn't available anymore</strong>It may have been replaced by a new set. <button type="button" class="linkbtn" id="ed-back">Back to the board</button></div>`;
-  const resend = S.edOpen.type === "resend";
-  const d = store.get(edKey()) || {};
-  const val = k => d[k] !== undefined ? d[k] : (src[k] || "");
-  const checks = src.checks || [];
-  const ticked = new Set(d.ticked || []);
-  return `<h1 class="page-title">${resend ? "Edit and resend syndicated" : "Fix this syndicated"}</h1>
-  <p class="lede">${resend ? "Make the changes management asked for, then send it back for review." : "This syndicated has deliberate mistakes. Find and fix each one in the text, tick it off, then send it to management. It runs in Editorial Pieces under the GNS Editorial Team byline, with no cover image."}</p>
-  ${flashHtml()}${writeNotice()}
-  ${resend && src.reviewNote ? `<div class="msg msg-warn"><strong>Note from ${esc(src.reviewedByName || "management")}:</strong> ${esc(src.reviewNote)}</div>` : ""}
-  <div id="ed-lock">${edLockHtml()}</div>
-  <form class="write" id="ed-form" novalidate>
-    <div class="card write-main">
-      <div class="field"><label for="f-headline">Headline</label><input type="text" id="f-headline" maxlength="160" value="${esc(val("headline"))}"></div>
-      <div class="field"><label for="f-dek">Subheadline <span class="hint" style="font-weight:400">(optional)</span></label><input type="text" id="f-dek" maxlength="240" value="${esc(val("dek"))}"></div>
-      <div class="field">
-        <label for="f-body">Article</label>
-        <textarea id="f-body">${esc(val("body"))}</textarea>
-        <div class="meta-row"><span>Leave a blank line between paragraphs. Start a line with ## for a subheading, or &gt; for a pull quote.</span><span id="wc">${words(val("body"))} words</span></div>
-      </div>
-    </div>
-    <div class="write-side">
-      <div class="card side-box">
-        <span class="label" id="chk-label">Mistakes to fix (${checks.length})</span>
-        <p class="hint">Tick each one once you've fixed it in the text.</p>
-        <div class="checks" role="group" aria-labelledby="chk-label">${checks.map((c, i) => `<label><input type="checkbox" data-chk="${i}"${ticked.has(i) ? " checked" : ""}><span>${esc(c.label)}</span></label>`).join("") || `<p class="hint" style="padding:10px 12px">No checklist for this one.</p>`}</div>
-      </div>
-      <div class="card side-box fixed-meta">
-        <div><strong>Byline:</strong> ${ED_BYLINE}</div>
-        <div><strong>Section:</strong> ${ED_SECTION}</div>
-        <span>No cover image. Bylines and sections are fixed for syndicateds.</span>
-      </div>
-      <div class="send-row">
-        <p class="err" id="ed-err" role="alert" hidden></p>
-        <button type="submit" class="btn btn-primary" id="ed-send"${edLocked() ? " disabled" : ""}>${resend ? "Resend to management" : "Send to management"}</button>
-        <button type="button" class="btn" id="ed-back">${resend ? "Cancel" : "Back to the board"}</button>
-        <p class="hint">Your edits save on this device as you type.</p>
-      </div>
-    </div>
-  </form>`;
-}
-function edRead() {
-  return { headline: $("f-headline").value.trim(), dek: $("f-dek").value.trim(), body: $("f-body").value,
-           ticked: [...$("ed-form").querySelectorAll("[data-chk]")].filter(b => b.checked).map(b => +b.dataset.chk) };
-}
-let edTimer = null;
-function wireEditor() {
-  $("ed-back").onclick = () => { const back = S.edOpen && S.edOpen.type === "resend" ? "mine" : "board"; S.edOpen = null; S.view = back; S.flash = null; renderChrome(); render(); window.scrollTo(0, 0); };
-  const form = $("ed-form"); if (!form) return;
-  const save = () => { clearTimeout(edTimer); const k = edKey(); edTimer = setTimeout(() => { if ($("ed-form")) store.set(k, edRead()); }, 400); };
-  form.addEventListener("input", save);
-  form.addEventListener("change", save);
-  $("f-body").addEventListener("input", () => { $("wc").textContent = words($("f-body").value) + " words"; });
-  form.onsubmit = sendEditorial;
-}
-async function sendEditorial(ev) {
-  ev.preventDefault();
-  const src = edSource(), err = $("ed-err"); err.hidden = true;
-  if (!src) return;
-  const resend = S.edOpen.type === "resend";
-  const f = edRead(), checks = src.checks || [];
-  const fail = t => { err.textContent = t; err.hidden = false; };
-  if (!f.headline) return fail("Add a headline.");
-  if (words(f.body) < 30) return fail("The syndicated needs at least 30 words.");
-  if (f.ticked.length < checks.length) return fail("Tick off every item on the checklist first.");
-  const text = [f.headline, f.dek, f.body].join("\n");
-  const left = checks.map((c, i) => ({ c, i })).filter(x => x.c.wrong && text.includes(x.c.wrong));
-  if (left.length) {
-    left.forEach(x => { const b = $("ed-form").querySelector(`[data-chk="${x.i}"]`); if (b) b.checked = false; });
-    store.set(edKey(), edRead());
-    return fail("Not quite. Still needs fixing: " + left.map(x => x.c.label).join("; ") + ".");
-  }
-  if (!resend && edLocked()) return fail("This hour's syndicated has already been sent, so this one can't go to management.");
-  const btn = $("ed-send"); btn.disabled = true; btn.textContent = "Sending…";
-  const now = new Date().toISOString();
-  try {
-    if (resend) {
-      await S.db.doc("submissions/" + src.id).update({ headline: f.headline, dek: f.dek, body: f.body, words: words(f.body), status: "pending", reviewNote: "", updatedAt: now, resubmittedAt: now });
-    } else {
-      const bd = await S.db.doc("editorialBatches/" + src.batch).get();
-      if (!bd.exists || bd.data().sentBy) { btn.textContent = "Send to management"; return fail("Someone just sent this hour's syndicated, so this one can't go to management."); }
-      const ref = S.db.collection("submissions").doc();
-      await ref.set({ kind: "editorial", headline: f.headline, dek: f.dek, body: f.body, section: ED_SECTION, tag: "Editorial", coverCredit: "", hasCover: false,
-                      authorId: "", authorName: ED_BYLINE, authorTitle: "", words: words(f.body), status: "pending", reviewNote: "", updatedAt: now,
-                      submittedBy: S.me.id, submittedByName: S.me.name, submittedAt: now, editorialId: src.id, batch: src.batch, checks });
-      await S.db.doc("editorialBatches/" + src.batch).update({ sentBy: S.me.id, sentByName: S.me.name, sentAt: now, submissionId: ref.id, editorialId: src.id, headline: f.headline });
-      try { await S.db.doc("editorials/" + src.id).update({ status: "sent", sentBy: S.me.id, sentByName: S.me.name, sentAt: now, submissionId: ref.id }); } catch (e) {}
-    }
-    store.del(edKey());
-    S.flash = { kind: "ok", text: `<strong>Sent to management.</strong> The syndicated “${esc(f.headline)}” is waiting for review. Once approved it goes live in Editorial Pieces within the hour.` };
-    S.edOpen = null; S.view = "mine"; renderChrome(); render(); window.scrollTo(0, 0);
-  } catch (e) {
-    fail(errText(e)); btn.disabled = false; btn.textContent = resend ? "Resend to management" : "Send to management";
-  }
-}
-
-/* ============ accounts (management) ============ */
-function genPassword() {
-  const w = ["Gavel", "Ledger", "Anchor", "Bulletin", "Capitol", "Byline", "Dispatch", "Headline", "Ballot", "Lantern", "Harbor", "Granite"];
-  const a = new Uint32Array(3); crypto.getRandomValues(a);
-  return `${w[a[0] % w.length]}-${w[a[1] % w.length]}-${1000 + (a[2] % 9000)}`;
-}
-function viewAccounts() {
-  const all = Object.values(S.accounts).sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "management" ? -1 : 1));
-  return `<h1 class="page-title">Staff accounts</h1>
-  <p class="lede">Everyone listed here can sign in and shows up in the byline list. Give new staff their username and password yourself.</p>
-  ${flashHtml()}
-  <div class="acct-grid">
-    <div class="card table-wrap"><table>
-      <thead><tr><th>Name</th><th>Username</th><th>Role</th><th><span class="hint">Actions</span></th></tr></thead>
-      <tbody>${all.map(a => `<tr class="${a.active === false ? "inactive" : ""}">
-        <td><strong>${esc(a.name)}</strong><div class="small">${esc(a.title || "")}</div></td>
-        <td>${esc(a.username || a.id)}</td>
-        <td><span class="role ${a.role === "management" ? "mgmt" : ""}">${a.role === "management" ? "Management" : "Staff"}</span>${a.active === false ? ' <span class="small">Deactivated</span>' : ""}</td>
-        <td style="white-space:nowrap">${a.id === S.me.id ? '<span class="small">You</span>' : `<button type="button" class="linkbtn" data-reset="${esc(a.id)}">Reset password</button><button type="button" class="linkbtn" data-toggle="${esc(a.id)}">${a.active === false ? "Reactivate" : "Deactivate"}</button>`}</td>
-      </tr>`).join("")}</tbody></table></div>
-    <form class="card side-box" id="acct-form" novalidate>
-      <h2 style="margin:0;font-size:18px">Add an account</h2>
-      <div class="field"><label for="a-name">Full name</label><input type="text" id="a-name" maxlength="80" placeholder="e.g. Joseph Reyes-McCollum"></div>
-      <div class="field"><label for="a-title">Title</label><input type="text" id="a-title" maxlength="80" placeholder="e.g. Senior Political Correspondent"></div>
-      <div class="field"><label for="a-user">Username</label><input type="text" id="a-user" maxlength="32" autocapitalize="none" spellcheck="false" placeholder="Letters and numbers, no spaces"></div>
-      <div class="field"><label for="a-pass">Password</label><div class="pw-row"><input type="text" id="a-pass" maxlength="64" value="${genPassword()}"><button type="button" class="btn" id="a-gen">New</button></div></div>
-      <div class="field"><label for="a-role">Role</label><select id="a-role"><option value="staff">Staff: can write and send stories</option><option value="management">Management: can also approve</option></select></div>
-      <p class="err" id="a-err" role="alert" hidden></p>
-      <button type="submit" class="btn btn-primary">Create account</button>
-    </form>
-  </div>`;
-}
-function wireAccounts() {
-  $("a-gen").onclick = () => { $("a-pass").value = genPassword(); };
-  $("acct-form").onsubmit = async ev => {
-    ev.preventDefault();
-    const err = $("a-err"); err.hidden = true;
-    const name = $("a-name").value.trim(), title = $("a-title").value.trim(), user = $("a-user").value.trim(), pass = $("a-pass").value, role = $("a-role").value;
-    const bad = !name ? "Add their full name." : !/^[A-Za-z0-9_.-]{3,32}$/.test(user) ? "Usernames are 3 to 32 letters, numbers, dots, dashes or underscores." : S.accounts[user.toLowerCase()] ? "That username is taken." : pass.length < 8 ? "Passwords need at least 8 characters." : "";
-    if (bad) { err.textContent = bad; err.hidden = false; return; }
-    try {
-      await S.db.doc("accounts/" + user.toLowerCase()).set({ username: user, name, title, role, hash: await hashFor(user, pass), active: true, createdAt: new Date().toISOString(), createdBy: S.me.id });
-      S.flash = { kind: "ok", text: `<strong>Account created for ${esc(name)}.</strong> Give them username <strong>${esc(user)}</strong> and password <strong>${esc(pass)}</strong>. This is the only time the password is shown.` };
-      render(); window.scrollTo(0, 0);
-    } catch (e) { err.textContent = errText(e); err.hidden = false; }
-  };
-  $("v-app").querySelectorAll("[data-toggle]").forEach(b => b.onclick = async () => {
-    const a = S.accounts[b.dataset.toggle]; b.disabled = true;
-    try { await S.db.doc("accounts/" + a.id).update({ active: a.active === false }); S.flash = { kind: "ok", text: `<strong>${esc(a.name)}</strong> is ${a.active === false ? "active again" : "deactivated and can no longer sign in"}.` }; render(); }
-    catch (e) { S.flash = { kind: "warn", text: errText(e) }; render(); }
-  });
-  $("v-app").querySelectorAll("[data-reset]").forEach(b => b.onclick = async () => {
-    const a = S.accounts[b.dataset.reset], pass = genPassword(); b.disabled = true;
-    try { await S.db.doc("accounts/" + a.id).update({ hash: await hashFor(a.username || a.id, pass) }); S.flash = { kind: "ok", text: `<strong>New password for ${esc(a.name)}:</strong> ${esc(pass)} (username ${esc(a.username || a.id)}). Their old password no longer works.` }; render(); window.scrollTo(0, 0); }
-    catch (e) { S.flash = { kind: "warn", text: errText(e) }; render(); }
+  $("tabs-in").innerHTML = html;
+  
+  document.querySelectorAll(".tabs-in button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      S.view = btn.dataset.view;
+      renderChrome();
+      render();
+    });
   });
 }
 </script>
-
-</body></html>
+</body>
+</html>
