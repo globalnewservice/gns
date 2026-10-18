@@ -8,84 +8,23 @@
 <body>
 
 <style id="gns-permanent-notice-style">
-html.gns-locked,html.gns-locked body {
-  overflow:hidden!important
-}
-#gns-permanent-notice {
-  position:fixed!important;
-  inset:0!important;
-  z-index:2147483647!important;
-  background:#080808!important;
-  color:#fff!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  overflow:auto!important;
-  padding:24px!important;
-  box-sizing:border-box!important;
-  font-family:Arial,Helvetica,sans-serif!important;
-  text-align:center!important
-}
-#gns-permanent-notice .gns-notice-inner {
-  width:100%;
-  max-width:850px
-}
-#gns-permanent-notice p.gns-message {
-  font-size:clamp(24px,5vw,52px);
-  font-weight:800;
-  line-height:1.25;
-  margin:0
-}
-#gns-permanent-notice #gns-until {
-  font:inherit;
-  color:inherit;
-  text-decoration:none;
-  cursor:pointer
-}
-#gns-permanent-notice #gns-signin[hidden],
-#gns-permanent-notice #gns-message[hidden] {
-  display:none!important
-}
-#gns-signin h1 {
-  font-size:clamp(28px,5vw,44px);
-  margin:0 0 24px
-}
-#gns-signin form {
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  max-width:360px;
-  margin:auto
-}
-#gns-signin input,#gns-signin button {
-  font:inherit;
-  font-size:18px;
-  padding:14px;
-  border-radius:8px;
-  box-sizing:border-box;
-  width:100%
-}
-#gns-signin input {
-  background:#fff;
-  color:#111;
-  border:1px solid #aaa
-}
-#gns-signin button {
-  background:#fff;
-  color:#111;
-  border:0;
-  font-weight:700;
-  cursor:pointer
-}
-#gns-error {
-  color:#ff9999;
-  font-size:16px;
-  min-height:20px
-}
+html.gns-locked,html.gns-locked body{overflow:hidden!important}
+#gns-permanent-notice{position:fixed!important;inset:0!important;z-index:2147483647!important;background:#080808!important;color:#fff!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:auto!important;padding:24px!important;box-sizing:border-box!important;font-family:Arial,Helvetica,sans-serif!important;text-align:center!important}
+#gns-permanent-notice .gns-notice-inner{width:100%;max-width:850px}
+#gns-permanent-notice p.gns-message{font-size:clamp(24px,5vw,52px);font-weight:800;line-height:1.25;margin:0}
+#gns-permanent-notice #gns-until{font:inherit;color:inherit;text-decoration:none;cursor:pointer}
+#gns-permanent-notice #gns-signin[hidden],#gns-permanent-notice #gns-message[hidden]{display:none!important}
+#gns-signin h1{font-size:clamp(28px,5vw,44px);margin:0 0 24px}
+#gns-signin form{display:flex;flex-direction:column;gap:14px;max-width:360px;margin:auto}
+#gns-signin input,#gns-signin button{font:inherit;font-size:18px;padding:14px;border-radius:8px;box-sizing:border-box;width:100%}
+#gns-signin input{background:#fff;color:#111;border:1px solid #aaa}
+#gns-signin button{background:#fff;color:#111;border:0;font-weight:700;cursor:pointer}
+#gns-error{color:#ff9999;font-size:16px;min-height:20px}
 </style>
 
 <div id="gns-permanent-notice" role="main">
   <div class="gns-notice-inner">
+
     <p class="gns-message" id="gns-message">What’s done is done. I will not be returning because I’m so idiotic. <button id="gns-until" type="button" aria-label="Enter password to access the site" style="border:0;background:none;padding:0">Until</button></p>
 
     <section id="gns-signin" hidden>
@@ -96,6 +35,7 @@ html.gns-locked,html.gns-locked body {
         <div id="gns-error" role="alert"></div>
       </form>
     </section>
+
   </div>
 </div>
 
