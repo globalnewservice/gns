@@ -60,6 +60,9 @@
   .nav a { font-weight: 600; font-size: 16px; padding: 6px 0; border-bottom: 2px solid transparent; }
   .nav a.active, .nav a:hover { border-bottom-color: #fff; }
   .icons { display: flex; gap: 16px; align-items: center; margin-left: auto; }
+  .gns-install-link { border: 1px solid rgba(255,255,255,.75); border-radius: 5px; background: #fff; color: var(--brand); padding: 8px 11px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .gns-install-link:hover { background: #f4f4f4; }
+  @media (max-width: 420px) { .gns-install-link { padding: 7px 8px; font-size: 12px; } .icons { gap: 8px; } }
   .icon-btn { background: none; border: 0; padding: 6px; color: inherit; cursor: pointer; border-radius: 6px; }
   .icon-btn:focus-visible, a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   @media (min-width: 900px) { .nav { display: flex; } }
@@ -205,6 +208,7 @@
     </a>
     <nav class="nav" id="nav" aria-label="Sections"></nav>
     <div class="icons">
+      <button class="gns-install-link" type="button" data-install-app>Install GNS</button>
       <button class="icon-btn" id="searchBtn" aria-label="Search" aria-expanded="false">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><line x1="15.2" y1="15.2" x2="21" y2="21"/></svg>
       </button>
@@ -960,6 +964,8 @@ input.addEventListener("input", () => {
 window.addEventListener("hashchange", render);
 render();
 </script>
+
+<script src="install.js" data-name="GNS" data-icon="icon-512.png" data-accent="#8e1c13" data-theme="auto" data-tagline="Install Global News Services on your device"></script>
 </body>
 </html>
 
