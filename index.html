@@ -1,117 +1,98 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GNS</title>
 <style>
-html.gns-locked,html.gns-locked body {
-  overflow: hidden !important;
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
 }
-#gns-permanent-notice {
+#gns-password-screen {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 999999;
   background: #080808;
-  color: #fff;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
 }
-#gns-signin {
+#gns-password-screen[hidden] {
+  display: none !important;
+}
+#gns-login {
   width: 100%;
   max-width: 360px;
   text-align: center;
 }
-#gns-signin[hidden] {
-  display: none !important;
-}
-#gns-signin h1 {
+#gns-login h1 {
   font-size: 32px;
   margin-bottom: 24px;
 }
-#gns-password-form {
+#gns-login form {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-#gns-password-form input,
-#gns-password-form button {
-  font: inherit;
-  font-size: 18px;
-  padding: 14px;
-  border-radius: 8px;
+#gns-login input, #gns-login button {
   box-sizing: border-box;
   width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border-radius: 8px;
 }
-#gns-password-form input {
-  background: #fff;
+#gns-login input {
+  background: white;
   color: #111;
   border: 1px solid #aaa;
 }
-#gns-password-form button {
-  background: #fff;
+#gns-login button {
+  background: white;
   color: #111;
   border: 0;
-  font-weight: 700;
+  font-weight: bold;
   cursor: pointer;
 }
 #gns-error {
   color: #ff9999;
-  font-size: 16px;
-  min-height: 20px;
 }
 </style>
 </head>
 <body>
 
-<div id="gns-permanent-notice">
-  <section id="gns-signin" hidden>
+<div id="gns-password-screen">
+  <div id="gns-login">
     <h1>Enter the password</h1>
-    <form id="gns-password-form">
-      <input id="gns-password-input" type="password"
-        placeholder="Password" autocomplete="off" required>
+    <form id="gns-form">
+      <input id="gns-password" type="password" placeholder="Password" autocomplete="off" required>
       <button type="submit">Sign in</button>
       <div id="gns-error" role="alert"></div>
     </form>
-  </section>
+  </div>
 </div>
 
 <script>
 (function() {
-  var key = 'gns-site-unlocked';
-  var notice = document.getElementById('gns-permanent-notice');
-  var signin = document.getElementById('gns-signin');
+  const key = 'gns-site-unlocked';
+  const screen = document.getElementById('gns-password-screen');
 
   if (sessionStorage.getItem(key) === 'yes') {
-    notice.remove();
-    return;
+    screen.hidden = true;
   }
 
-  document.documentElement.classList.add('gns-locked');
+  document.getElementById('gns-form').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-  notice.addEventListener('click', function() {
-    signin.hidden = false;
-    document.getElementById('gns-password-input').focus();
-  });
-
-  signin.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-
-  document.getElementById('gns-password-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    if (document.getElementById('gns-password-input').value === 'password123') {
+    if (document.getElementById('gns-password').value === 'password123') {
       sessionStorage.setItem(key, 'yes');
-      document.documentElement.classList.remove('gns-locked');
-      notice.remove();
+      screen.hidden = true;
     } else {
-      document.getElementById('gns-error').textContent =
-        'Incorrect password. Please try again.';
+      document.getElementById('gns-error').textContent = 'Incorrect password. Please try again.';
     }
   });
 })();
