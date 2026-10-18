@@ -1,17 +1,703 @@
-# GNS | America’s Number One Source for News
+### 2. `index.html`
 
-A responsive, cable-news-style homepage and article template built with HTML, CSS, and vanilla JavaScript. 
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GNS | America’s Number One Source for News</title>
+<meta property="og:title" content="GNS | America’s Number One Source for News">
+<meta name="description" content="Breaking news, politics, global affairs and opinion from GNS.">
+<meta property="og:description" content="Breaking news, politics, global affairs and opinion from GNS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700;800&family=Fira+Sans+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #8e1c13;
+    --brand-dark: #6d140d;
+    --bg: #ffffff;
+    --ink: #111111;
+    --muted: #5f5f5f;
+    --rule: #e2e2e2;
+    --soft: #f4f4f4;
+    --kicker: #8e1c13;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--brand);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141414; --ink: #f2f2f2; --muted: #a8a8a8; --rule: #333; --soft: #1e1e1e; --kicker: #ff6b5e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141414; --ink: #f2f2f2; --muted: #a8a8a8; --rule: #333; --soft: #1e1e1e; --kicker: #ff6b5e;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Fira Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+  button { font: inherit; }
 
-## Features
-* **Sticky Masthead & Navigation:** Adapts seamlessly across desktop and mobile viewports with collapsible drawers and quick-access section strips.
-* **Dark Mode Support:** Automatic color scheme switching based on system preferences (`prefers-color-scheme`) with manual toggle capability.
-* **Dynamic Views:** Includes layouts for homepage feeds, section indexes, full-length articles, and editorial cartoon grids.
+  /* Masthead */
+  .masthead { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--brand); color: #fff; }
+  .bar { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 28px; }
+  .logo { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; flex: none; }
+  .logo-word { font-weight: 800; font-size: 26px; letter-spacing: 0.02em; }
+  .logo svg { margin-top: 4px; }
+  .nav { display: none; gap: 22px; flex: 1; }
+  .nav a { font-weight: 600; font-size: 16px; padding: 6px 0; border-bottom: 2px solid transparent; }
+  .nav a.active, .nav a:hover { border-bottom-color: #fff; }
+  .icons { display: flex; gap: 16px; align-items: center; margin-left: auto; }
+  .icon-btn { background: none; border: 0; padding: 6px; color: inherit; cursor: pointer; border-radius: 6px; }
+  .icon-btn:focus-visible, a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  @media (min-width: 900px) { .nav { display: flex; } }
 
-## Getting Started
+  .search, .drawer { display: none; }
+  .search.open, .drawer.open { display: block; }
+  .search { max-width: 1200px; margin: 0 auto; padding: 0 20px 14px; }
+  .search input { width: 100%; font: inherit; font-size: 17px; padding: 10px 12px; border: 0; border-radius: 6px; }
+  .results { margin-top: 8px; }
+  .results a, .results p { display: block; color: #fff; padding: 8px 0; font-size: 16px; margin: 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .drawer { border-top: 1px solid rgba(255,255,255,0.25); }
+  .drawer ul { list-style: none; margin: 0 auto; padding: 8px 20px 16px; max-width: 1200px; }
+  .drawer a { display: block; padding: 11px 0; font-weight: 600; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .drawer li:last-child a { border-bottom: 0; }
 
-To run this project locally, simply clone the repository and open `index.html` in your web browser:
+  /* Sub-bar (section strip, like a cable-news homepage) */
+  .strip { background: var(--brand-dark); color: #fff; overflow-x: auto; }
+  .strip-inner { max-width: 1200px; margin: 0 auto; padding: 8px 20px; display: flex; gap: 20px; white-space: nowrap; font-size: 14px; font-weight: 500; }
+  .strip a { opacity: 0.9; }
+  .strip a.active { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+  @media (min-width: 900px) { .strip { display: none; } }
 
-```bash
-git clone [https://github.com/your-username/gns-news-website.git](https://github.com/your-username/gns-news-website.git)
-cd gns-news-website
-# Open index.html in your browser of choice
+  main { background: var(--bg); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px 20px 56px; }
+
+  /* Home */
+  .kicker { color: var(--kicker); font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block; }
+  .home-grid { display: grid; gap: 24px; grid-template-columns: 1fr; }
+  .lead { order: 1; }
+  .rail-left { order: 2; }
+  .rail-right { order: 3; }
+  @media (min-width: 900px) {
+    .home-grid { grid-template-columns: 240px 1fr 280px; }
+    .rail-left { order: 1; } .lead { order: 2; } .rail-right { order: 3; }
+  }
+  .lead-img { aspect-ratio: 16 / 9; overflow: hidden; background: var(--soft); }
+  .lead-img img { width: 100%; height: 100%; object-fit: cover; }
+  .lead h2 {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-weight: 800; font-size: clamp(30px, 6vw, 48px); line-height: 1.04;
+    margin: 14px 0 10px; text-transform: uppercase;
+  }
+  .lead h2 a:hover { text-decoration: underline; text-decoration-thickness: 3px; }
+  .dek { overflow-wrap: anywhere; font-size: 18px; line-height: 1.45; color: var(--muted); margin: 0; max-width: 60ch; }
+
+  .rail h3 {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-size: 20px; font-weight: 800; margin: 0 0 10px; padding-bottom: 8px;
+    border-bottom: 3px solid var(--brand);
+  }
+  .story { display: grid; grid-template-columns: 1fr 104px; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+  .story.noimg { grid-template-columns: 1fr; }
+  .story .thumb { aspect-ratio: 4 / 3; overflow: hidden; background: var(--soft); }
+  .story .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .story h4 { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 700; }
+  .story:hover h4 { text-decoration: underline; }
+  .empty { color: var(--muted); font-size: 15px; padding: 12px 0; margin: 0; }
+
+  .more { margin-top: 36px; }
+  .more h3 {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-size: 24px; font-weight: 800; margin: 0 0 6px; padding-bottom: 8px; border-bottom: 3px solid var(--brand);
+  }
+  .card-grid { display: grid; gap: 22px; grid-template-columns: 1fr; margin-top: 16px; }
+  @media (min-width: 640px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 900px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+  .card .thumb { aspect-ratio: 16 / 9; overflow: hidden; background: var(--soft); margin-bottom: 10px; }
+  .card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card h4 { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 700; }
+  .card:hover h4 { text-decoration: underline; }
+
+  /* Section page */
+  .section-title {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-weight: 800; font-size: clamp(32px, 6vw, 52px); margin: 4px 0 4px;
+  }
+  .section-rule { border: 0; border-top: 4px solid var(--brand); margin: 0 0 8px; }
+  .list .story { grid-template-columns: 1fr 140px; }
+  @media (min-width: 640px) { .list .story { grid-template-columns: 1fr 220px; } .list .story h4 { font-size: 22px; } }
+
+  /* Article */
+  .article { max-width: 1000px; margin: 0 auto; padding: 24px 20px 56px; }
+  .article h1 {
+    margin: 0 0 22px; font-weight: 700; text-transform: uppercase;
+    font-size: clamp(28px, 6.2vw, 58px); line-height: 1.05; text-align: center;
+  }
+  .article .photo { width: 100%; aspect-ratio: 1899 / 721; overflow: hidden; background: var(--soft); }
+  .article .photo img { width: 100%; height: 100%; object-fit: cover; }
+  .article .inline-photo { margin: 24px 0; }
+  .article .inline-photo img { width: 100%; height: auto; display: block; }
+  .art-dek { text-align: center; font-size: clamp(18px, 2.4vw, 22px); line-height: 1.4; color: var(--muted); margin: -8px auto 22px; max-width: 60ch; }
+  .meta { display: flex; justify-content: space-between; gap: 16px; margin-top: 14px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+  .meta p { margin: 0; }
+  .tag { white-space: nowrap; }
+  .body { margin-top: 18px; overflow-wrap: anywhere; }
+  .body p { font-size: 19px; line-height: 1.5; margin: 0 0 1em; max-width: 75ch; }
+  .body .subhead {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-weight: 800; font-size: clamp(24px, 3.4vw, 30px); line-height: 1.15; margin: 1.5em 0 0.5em; max-width: 75ch;
+  }
+  .body ul { margin: 0 0 1em; padding-left: 1.2em; max-width: 75ch; }
+  .body li { font-size: 19px; line-height: 1.5; font-weight: 600; margin-bottom: 0.3em; }
+  .body li::marker { color: var(--brand); }
+  .body blockquote { margin: 1.2em 0 1.4em; padding: 4px 0 4px 20px; border-left: 5px solid var(--brand); max-width: 75ch; }
+  .body blockquote p {
+    font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif;
+    font-weight: 700; font-size: clamp(22px, 3vw, 28px); line-height: 1.25; margin: 0 0 0.35em;
+  }
+  .body blockquote p:last-child { margin-bottom: 0; }
+  @media (min-width: 700px) { .body p { font-size: 21px; } .body li { font-size: 21px; } .meta { font-size: 16px; } }
+  .back { display: inline-block; margin-top: 18px; font-weight: 600; color: var(--kicker); }
+
+  /* Cartoons */
+  .toon-grid { display: grid; gap: 22px; grid-template-columns: 1fr; margin-top: 16px; }
+  @media (min-width: 640px) { .toon-grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 900px) { .toon-grid.four { grid-template-columns: repeat(4, 1fr); } .toon-grid.three { grid-template-columns: repeat(3, 1fr); } }
+  .toon-card { display: block; }
+  .toon-card .frame { aspect-ratio: 4 / 3; background: var(--soft); border: 1px solid var(--rule); overflow: hidden; display: grid; place-items: center; margin-bottom: 10px; }
+  .toon-card .frame img { width: 100%; height: 100%; object-fit: contain; }
+  .toon-card h4 { margin: 0; font-size: 19px; line-height: 1.2; font-weight: 700; }
+  .toon-card p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .toon-card:hover h4 { text-decoration: underline; }
+  .band-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: 3px solid var(--brand); padding-bottom: 8px; }
+  .band-head h3 { border: 0 !important; padding: 0 !important; margin: 0 !important; }
+  .band-head a { font-weight: 600; font-size: 15px; color: var(--kicker); white-space: nowrap; }
+  .toon-full { margin: 0; background: var(--soft); border: 1px solid var(--rule); }
+  .toon-full img { width: 100%; height: auto; display: block; margin: 0 auto; max-height: 85vh; object-fit: contain; }
+  .toon-caption { font-size: clamp(19px, 2.4vw, 22px); line-height: 1.45; text-align: center; font-style: italic; margin: 18px auto 0; max-width: 60ch; overflow-wrap: anywhere; }
+
+  footer { background: var(--brand); color: #fff; }
+  footer .wrap { padding: 22px 20px; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="bar">
+    <a class="logo" href="#/" aria-label="GNS home">
+      <span class="logo-word">GNS</span>
+      <svg width="40" height="18" viewBox="0 0 40 18" aria-hidden="true">
+        <rect x="2" y="1" width="20" height="9" rx="4.5" fill="#fff"/>
+        <rect x="14" y="7" width="22" height="10" rx="5" fill="#fff"/>
+      </svg>
+    </a>
+    <nav class="nav" id="nav" aria-label="Sections"></nav>
+    <div class="icons">
+      <button class="icon-btn" id="searchBtn" aria-label="Search" aria-expanded="false">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><line x1="15.2" y1="15.2" x2="21" y2="21"/></svg>
+      </button>
+      <button class="icon-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">
+        <svg width="32" height="26" viewBox="0 0 34 28" fill="none" stroke="currentColor" stroke-width="3"><line x1="1" y1="4" x2="33" y2="4"/><line x1="1" y1="14" x2="33" y2="14"/><line x1="1" y1="24" x2="33" y2="24"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="search" id="search">
+    <input type="search" id="searchInput" placeholder="Search GNS" aria-label="Search GNS">
+    <div class="results" id="results"></div>
+  </div>
+  <nav class="drawer" id="drawer" aria-label="All sections"><ul id="drawerList"></ul></nav>
+  <div class="strip"><div class="strip-inner" id="strip"></div></div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="wrap">
+    <a href="#/"><strong>GNS</strong></a>
+    <span>&copy; 2026 GNS. All rights reserved.</span>
+  </div>
+</footer>
+
+<script>
+/* ===== Images ===== */
+const IMAGES = {
+  nr_1zmcpwjo5taz32o5pqvp: "data:image/jpeg;base64,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",
+  nr_aywkgqarm7kys6izf5wa: "data:image/jpeg;base64,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JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJS0_JJJJJAA==}
+};
+
+/* ===== State & Data Model ===== */
+let state = {
+  section: "home",
+  query: "",
+  theme: localStorage.getItem("gns_theme") || "light"
+};
+
+const SECTIONS = [
+  { id: "home", label: "Home" },
+  { id: "politics", label: "Politics" },
+  { id: "world", label: "World" },
+  { id: "tech", label: "Tech" },
+  { id: "business", label: "Business" },
+  { id: "opinion", label: "Opinion" },
+  { id: "cartoons", label: "Cartoons" }
+];
+
+const DB = {
+  home: {
+    lead: {
+      kicker: "Exclusive Investigation",
+      title: "Global Summit Reaches Landmark Climate Accord After Midnight Negotiations",
+      dek: "Delegates from over 190 nations finalized a binding framework for carbon pricing and green technology transfers, overcoming last-minute resistance from major industrial blocks.",
+      tag: "Global Affairs",
+      time: "18m ago",
+      img: IMAGES.nr_1zmcpwjo5taz32o5pqvp,
+      link: "#/article/climate-accord"
+    },
+    railLeft: [
+      { title: "Central Bank Holds Interest Rates Steady Amid Economic Resilience", time: "1h ago", link: "#/article/rates-steady" },
+      { title: "Next-Gen Quantum Processor Achieves Million-Qubit Milestone", time: "2h ago", link: "#/article/quantum-milestone" },
+      { title: "Senate Committee Subpoenas Tech Executives Over Data Transparency", time: "3h ago", link: "#/article/senate-subpoena" }
+    ],
+    railRight: [
+      { title: "Opinion: The Quiet Revolution in Urban Public Transit", time: "4h ago", img: IMAGES.nr_aywkgqarm7kys6izf5wa, link: "#/article/urban-transit" },
+      { title: "Markets Rally as Supply Chain Bottlenecks Finally Ease", time: "5h ago", link: "#/article/markets-rally" }
+    ],
+    more: [
+      { title: "How Artificial Intelligence is Reshaping Modern Architecture", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, link: "#/article/ai-architecture" },
+      { title: "Electric Aviation Startups Prepare for First Commercial Test Flights", img: IMAGES.nr_aywkgqarm7kys6izf5wa, link: "#/article/electric-aviation" },
+      { title: "The Return of Vinyl: Why Physical Media Continues to Outpace Streaming Growth in Niche Markets", img: IMAGES.nr_1zmcpwkgqarm7kys6izf5wa, link: "#/article/return-of-vinyl" }
+    ]
+  },
+  politics: {
+    title: "Politics",
+    stories: [
+      { title: "Bipartisan Infrastructure Bill Passes House After Intense Debate", dek: "Lawmakers forge rare consensus on funding modernized interstate corridors and clean water grids.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "2h ago", link: "#/article/bipartisan-bill" },
+      { title: "Supreme Court Agrees to Hear Landmark Privacy Case on Digital Surveillance", dek: "The justices will determine whether warrantless location tracking violates constitutional protections.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "4h ago", link: "#/article/supreme-court-privacy" },
+      { title: "State Governors Launch Joint Task Force on Cyber Resilience", dek: "Initiative aims to safeguard municipal voting infrastructure ahead of upcoming election cycles.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "6h ago", link: "#/article/state-governors-cyber" }
+    ]
+  },
+  world: {
+    title: "World Affairs",
+    stories: [
+      { title: "Mediterranean Solar Grid Project Begins Transcontinental Power Transmission", dek: "Clean energy flows between North Africa and Southern Europe in unprecedented renewable energy exchange.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "1h ago", link: "#/article/mediterranean-solar" },
+      { title: "Pacific Island Nations Adopt Unified Maritime Protection Treaty", dek: "Agreement creates the world's largest contiguous marine sanctuary, banning industrial deep-sea mining.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "3h ago", link: "#/article/pacific-treaty" },
+      { title: "European Union Proposes New Standards for Circular Economy Manufacturing", dek: "Manufacturers will be legally required to guarantee repairability and modular component design.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "5h ago", link: "#/article/eu-circular-economy" }
+    ]
+  },
+  tech: {
+    title: "Technology",
+    stories: [
+      { title: "Superconducting Materials Breakthrough Promising Zero-Loss Power Grids", dek: "Researchers demonstrate stable high-temperature transmission wires operating at room pressure.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "Just now", link: "#/article/superconducting-breakthrough" },
+      { title: "Open-Source Robotics Framework Standardizes Autonomous Warehouse Fleets", dek: "Interoperability standard allows robots from competing manufacturers to collaborate seamlessly in logistics hubs.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "2h ago", link: "#/article/open-source-robotics" }
+    ]
+  },
+  business: {
+    title: "Business & Markets",
+    stories: [
+      { title: "Global Venture Capital Shifts Focus to Hard Tech and Climate Adaptation", dek: "Software investments recede as institutional funds pour billions into synthetic biology, carbon capture, and grid stability.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "3h ago", link: "#/article/vc-shift-hard-tech" },
+      { title: "Autonomous Freight Corridors Expand Across Sunbelt Logistics Hubs", dek: "Commercial trucking firms report 40% reduction in fuel consumption and transit delays on pilot routes.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "5h ago", link: "#/article/autonomous-freight" }
+    ]
+  },
+  opinion: {
+    title: "Opinion & Analysis",
+    stories: [
+      { title: "The Age of Hyper-Specialization is Giving Way to Generalist Renaissance", dek: "Why the future belongs to multidisciplinary thinkers who can bridge artificial intelligence, ethics, and civic governance.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, time: "6h ago", link: "#/article/generalist-renaissance" },
+      { title: "Rebuilding Trust in Public Institutions Requires Radical Transparency", dek: "Opinion: Bureaucracy must embrace open data architecture if it hopes to win back skeptical citizens.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, time: "8h ago", link: "#/article/rebuilding-trust" }
+    ]
+  },
+  cartoons: {
+    title: "Editorial Cartoons",
+    items: [
+      { title: "Navigating the Climate Accord", desc: "Political maneuvering meets the realities of green energy transition.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, link: "#/cartoon/climate-accord" },
+      { title: "The Quantum Leap", desc: "When processing power outpaces human legislation.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, link: "#/cartoon/quantum-leap" },
+      { title: "Supply Chain Blues", desc: "Finding the missing link in global logistics.", img: IMAGES.nr_1zmcpwjo5taz32o5pqvp, link: "#/cartoon/supply-chain" },
+      { title: "Urban Transit Evolution", desc: "Pedestrians reclaim the downtown core.", img: IMAGES.nr_aywkgqarm7kys6izf5wa, link: "#/cartoon/urban-transit" }
+    ]
+  }
+};
+
+const ARTICLES = {
+  "climate-accord": {
+    title: "Global Summit Reaches Landmark Climate Accord After Midnight Negotiations",
+    dek: "Delegates from over 190 nations finalized a binding framework for carbon pricing and green technology transfers, overcoming last-minute resistance from major industrial blocks.",
+    tag: "Global Affairs",
+    time: "October 18, 2026",
+    author: "Elena Rostova",
+    photo: IMAGES.nr_1zmcpwjo5taz32o5pqvp,
+    content: [
+      "GENEVA — After two weeks of grueling, round-the-clock negotiations that frequently spilled into the early morning hours, delegates from 194 countries formally adopted the Geneva Climate Compact early Sunday morning. The agreement represents the most comprehensive binding international commitment to emissions reduction and sustainable development in modern history.",
+      "The pact establishes an enforceable baseline international carbon price, starting at $75 per ton and scaling progressively through 2035. Crucially, the treaty includes an unprecedented $500 billion annual transfer mechanism designed to subsidize renewable energy infrastructure, grid modernization, and climate resilience projects in developing economies.",
+      "Subhead: Overcoming the Impasse",
+      "The breakthrough arrived just hours before the conference deadline after a compromise was brokered between traditional energy-exporting nations and the Climate Vulnerable Forum. The final text provides tailored transition timelines and specialized economic cushioning for developing industrial regions.",
+      { type: "quote", text: "“We have proven today that multilateral diplomacy can still rise to meet existential challenges. This is not the end of our work, but it is the foundation upon which a sustainable future can finally be built.”" },
+      "Delegates erupted into sustained applause as the final gavel fell. Environmental economists have already begun revising global emissions forecasts downward, projecting that full implementation of the accord could cap global temperature increases well below the critical 1.5-degree Celsius threshold.",
+      "Market reaction was swift and decisive. Renewable energy equities surged across Asian and European bourses, while traditional fossil fuel indexes experienced orderly corrections as institutional investors adjusted portfolios to align with the new regulatory reality."
+    ]
+  },
+  "rates-steady": {
+    title: "Central Bank Holds Interest Rates Steady Amid Economic Resilience",
+    dek: "Policymakers opt for patience as inflation aligns closely with targets while labor markets maintain robust expansion.",
+    tag: "Business",
+    time: "October 18, 2026",
+    author: "Marcus Vance",
+    photo: IMAGES.nr_aywkgqarm7kys6izf5wa,
+    content: [
+      "WASHINGTON — The Federal Reserve voted unanimously to maintain its benchmark interest rate at its current level, pointing to sustained economic growth, stable consumer spending, and moderating inflation metrics as justification for a patient monetary stance.",
+      "In a statement accompanying the decision, the central bank’s policy committee emphasized that while price stability has largely been restored, incoming economic data will continue to dictate the timing of future adjustments.",
+      "Subhead: Navigating Soft Landings",
+      "Economists widely praised the steady hand demonstrated by monetary authorities throughout the post-pandemic recovery cycle. Unemployment remains near historic lows, and productivity growth has rebounded significantly due to accelerated corporate adoption of automation technologies."
+    ]
+  }
+};
+
+const CARTOONS_DETAIL = {
+  "climate-accord": {
+    title: "Navigating the Climate Accord",
+    caption: "“Let’s hope the paperwork doesn't melt before we reach port.”",
+    img: IMAGES.nr_1zmcpwjo5taz32o5pqvp
+  },
+  "quantum-leap": {
+    title: "The Quantum Leap",
+    caption: "“My calculations suggest we solved tomorrow's problem yesterday.”",
+    img: IMAGES.nr_aywkgqarm7kys6izf5wa
+  },
+  "supply-chain": {
+    title: "Supply Chain Blues",
+    caption: "“It's not lost; it's simply experiencing existential wanderlust.”",
+    img: IMAGES.nr_1zmcpwjo5taz32o5pqvp
+  },
+  "urban-transit": {
+    title: "Urban Transit Evolution",
+    caption: "“Cars used to honk; now they just politely consult their GPS and turn around.”",
+    img: IMAGES.nr_aywkgqarm7kys6izf5wa
+  }
+};
+
+/* ===== DOM Wiring ===== */
+const appEl = document.getElementById("app");
+const navEl = document.getElementById("nav");
+const drawerListEl = document.getElementById("drawerList");
+const stripEl = document.getElementById("strip");
+const searchBtn = document.getElementById("searchBtn");
+const menuBtn = document.getElementById("menuBtn");
+const searchDiv = document.getElementById("search");
+const searchInput = document.getElementById("searchInput");
+const resultsDiv = document.getElementById("results");
+const drawerDiv = document.getElementById("drawer");
+
+function init() {
+  // Build Navs
+  SECTIONS.forEach(s => {
+    // Top Nav
+    const a = document.createElement("a");
+    a.href = `#/${s.id === 'home' ? '' : s.id}`;
+    a.textContent = s.label;
+    a.dataset.section = s.id;
+    navEl.appendChild(a);
+
+    // Strip
+    const sa = document.createElement("a");
+    sa.href = `#/${s.id === 'home' ? '' : s.id}`;
+    sa.textContent = s.label;
+    sa.dataset.section = s.id;
+    stripEl.appendChild(sa);
+
+    // Drawer
+    const li = document.createElement("li");
+    const da = document.createElement("a");
+    da.href = `#/${s.id === 'home' ? '' : s.id}`;
+    da.textContent = s.label;
+    da.addEventListener("click", () => toggleDrawer(false));
+    li.appendChild(da);
+    drawerListEl.appendChild(li);
+  });
+
+  // Search & Menu toggles
+  searchBtn.addEventListener("click", () => {
+    const isOpen = searchDiv.classList.toggle("open");
+    searchBtn.setAttribute("aria-expanded", isOpen);
+    if (isOpen) {
+      drawerDiv.classList.remove("open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      searchInput.focus();
+    }
+  });
+
+  menuBtn.addEventListener("click", () => {
+    const isOpen = drawerDiv.classList.toggle("open");
+    menuBtn.setAttribute("aria-expanded", isOpen);
+    if (isOpen) {
+      searchDiv.classList.remove("open");
+      searchBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  searchInput.addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) {
+      resultsDiv.innerHTML = "";
+      return;
+    }
+    const matches = [];
+    // Search DB
+    Object.keys(DB).forEach(sec => {
+      const data = DB[sec];
+      if (data.lead && data.lead.title.toLowerCase().includes(q)) matches.push({ title: data.lead.title, link: data.lead.link });
+      if (data.railLeft) data.railLeft.forEach(i => { if (i.title.toLowerCase().includes(q)) matches.push(i); });
+      if (data.railRight) data.railRight.forEach(i => { if (i.title.toLowerCase().includes(q)) matches.push(i); });
+      if (data.more) data.more.forEach(i => { if (i.title.toLowerCase().includes(q)) matches.push(i); });
+      if (data.stories) data.stories.forEach(i => { if (i.title.toLowerCase().includes(q)) matches.push(i); });
+      if (data.items) data.items.forEach(i => { if (i.title.toLowerCase().includes(q)) matches.push(i); });
+    });
+
+    if (matches.length === 0) {
+      resultsDiv.innerHTML = `<p>No results found for "${escapeHtml(q)}"</p>`;
+    } else {
+      resultsDiv.innerHTML = matches.map(m => `<a href="${m.link}">${escapeHtml(m.title)}</a>`).join("");
+    }
+  });
+
+  window.addEventListener("hashchange", router);
+  router();
+}
+
+function toggleDrawer(open) {
+  drawerDiv.classList.toggle("open", open);
+  menuBtn.setAttribute("aria-expanded", open);
+}
+
+function router() {
+  const hash = location.hash || "#/";
+  searchDiv.classList.remove("open");
+  drawerDiv.classList.remove("open");
+  searchBtn.setAttribute("aria-expanded", "false");
+  menuBtn.setAttribute("aria-expanded", "false");
+  window.scrollTo(0, 0);
+
+  // Update active nav
+  let activeSec = "home";
+  if (hash.startsWith("#/politics")) activeSec = "politics";
+  else if (hash.startsWith("#/world")) activeSec = "world";
+  else if (hash.startsWith("#/tech")) activeSec = "tech";
+  else if (hash.startsWith("#/business")) activeSec = "business";
+  else if (hash.startsWith("#/opinion")) activeSec = "opinion";
+  else if (hash.startsWith("#/cartoons")) activeSec = "cartoons";
+  else if (hash.startsWith("#/article/") || hash.startsWith("#/cartoon/")) activeSec = "";
+
+  document.querySelectorAll(".nav a, .strip-inner a").forEach(a => {
+    if (a.dataset.section === activeSec) a.classList.add("active");
+    else a.classList.remove("active");
+  });
+
+  if (hash === "#/" || hash === "") {
+    renderHome();
+  } else if (hash.startsWith("#/article/")) {
+    const artId = hash.replace("#/article/", "");
+    renderArticle(artId);
+  } else if (hash.startsWith("#/cartoon/")) {
+    const toonId = hash.replace("#/cartoon/", "");
+    renderCartoonDetail(toonId);
+  } else {
+    const sec = hash.replace("#/", "");
+    if (DB[sec]) {
+      renderSection(sec);
+    } else {
+      renderHome();
+    }
+  }
+}
+
+/* ===== Render Views ===== */
+function renderHome() {
+  const d = DB.home;
+  appEl.innerHTML = `
+    <div class="wrap">
+      <div class="home-grid">
+        <!-- Left Rail -->
+        <div class="rail rail-left">
+          <h3>Latest News</h3>
+          ${d.railLeft.map(s => `
+            <div class="story noimg">
+              <div>
+                <span class="kicker">${s.time}</span>
+                <h4><a href="${s.link}">${escapeHtml(s.title)}</a></h4>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <!-- Lead Story -->
+        <div class="lead">
+          <div class="lead-img"><img src="${d.lead.img}" alt="" loading="lazy"></div>
+          <span class="kicker">${escapeHtml(d.lead.tag)} &bull; ${escapeHtml(d.lead.time)}</span>
+          <h2><a href="${d.lead.link}">${escapeHtml(d.lead.title)}</a></h2>
+          <p class="dek">${escapeHtml(d.lead.dek)}</p>
+        </div>
+
+        <!-- Right Rail -->
+        <div class="rail rail-right">
+          <h3>Opinion & Markets</h3>
+          ${d.railRight.map(s => `
+            <div class="story ${s.img ? '' : 'noimg'}">
+              <div>
+                <span class="kicker">${s.time}</span>
+                <h4><a href="${s.link}">${escapeHtml(s.title)}</a></h4>
+              </div>
+              ${s.img ? `<div class="thumb"><img src="${s.img}" alt="" loading="lazy"></div>` : ''}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <!-- More Stories -->
+      <div class="more">
+        <h3>Featured Coverage</h3>
+        <div class="card-grid">
+          ${d.more.map(c => `
+            <article class="card">
+              <div class="thumb"><img src="${c.img}" alt="" loading="lazy"></div>
+              <h4><a href="${c.link}">${escapeHtml(c.title)}</a></h4>
+            </article>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSection(secKey) {
+  const data = DB[secKey];
+  if (!data) return renderHome();
+
+  if (secKey === "cartoons") {
+    appEl.innerHTML = `
+      <div class="wrap">
+        <h1 class="section-title">${escapeHtml(data.title)}</h1>
+        <hr class="section-rule">
+        <div class="toon-grid four">
+          ${data.items.map(item => `
+            <a class="toon-card" href="${item.link}">
+              <div class="frame"><img src="${item.img}" alt="" loading="lazy"></div>
+              <h4>${escapeHtml(item.title)}</h4>
+              <p>${escapeHtml(item.desc)}</p>
+            </a>
+          `).join("")}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  appEl.innerHTML = `
+    <div class="wrap">
+      <h1 class="section-title">${escapeHtml(data.title)}</h1>
+      <hr class="section-rule">
+      <div class="list">
+        ${data.stories.map(s => `
+          <div class="story">
+            <div>
+              <span class="kicker">${escapeHtml(s.time)}</span>
+              <h4><a href="${s.link}">${escapeHtml(s.title)}</a></h4>
+              <p class="dek" style="font-size:15px; margin-top:6px;">${escapeHtml(s.dek)}</p>
+            </div>
+            <div class="thumb"><img src="${s.img}" alt="" loading="lazy"></div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderArticle(artId) {
+  const art = ARTICLES[artId] || {
+    title: "Global Summit Reaches Landmark Accord After Intensive Final Session",
+    dek: "Delegates finalize landmark international framework after hours of deliberation.",
+    tag: "Breaking News",
+    time: "October 18, 2026",
+    author: "GNS Staff",
+    photo: IMAGES.nr_1zmcpwjo5taz32o5pqvp,
+    content: [
+      "GENEVA — International delegates concluded weeks of rigorous diplomatic negotiations early Sunday morning, ratifying a comprehensive new pact designed to reshape multilateral cooperation across key economic and environmental sectors.",
+      "The agreement establishes stringent benchmarks and structured accountability protocols, hailed by participating heads of state as a triumph of collaborative governance over geopolitical fragmentation.",
+      "Subhead: Looking Ahead",
+      "Implementation committees will convene next month in Vienna to draft regulatory enforcement mechanisms and establish regional oversight bureaus. Observers note that while the framework is robust, its long-term success will hinge upon sustained domestic political will across participating nations."
+    ]
+  };
+
+  appEl.innerHTML = `
+    <article class="article">
+      <span class="kicker" style="text-align:center;">${escapeHtml(art.tag)}</span>
+      <h1>${escapeHtml(art.title)}</h1>
+      <p class="art-dek">${escapeHtml(art.dek)}</p>
+      
+      <div class="photo"><img src="${art.photo}" alt="" loading="lazy"></div>
+      
+      <div class="meta">
+        <p>By <strong>${escapeHtml(art.author)}</strong></p>
+        <p class="tag">${escapeHtml(art.time)}</p>
+      </div>
+      
+      <div class="body">
+        ${art.content.map(block => {
+          if (typeof block === 'string') {
+            if (block.startsWith("Subhead:")) {
+              return `<div class="subhead">${escapeHtml(block.replace("Subhead:", "").trim())}</div>`;
+            }
+            return `<p>${escapeHtml(block)}</p>`;
+          } else if (block.type === 'quote') {
+            return `<blockquote><p>${escapeHtml(block.text)}</p></blockquote>`;
+          }
+          return '';
+        }).join("")}
+      </div>
+      
+      <a class="back" href="#/">&larr; Back to Home</a>
+    </article>
+  `;
+}
+
+function renderCartoonDetail(toonId) {
+  const toon = CARTOONS_DETAIL[toonId] || {
+    title: "Editorial Cartoon",
+    caption: "“Another day, another paradigm shift.”",
+    img: IMAGES.nr_1zmcpwjo5taz32o5pqvp
+  };
+
+  appEl.innerHTML = `
+    <div class="article">
+      <div class="band-head" style="margin-bottom:18px;">
+        <h3>Editorial Cartoons</h3>
+        <a href="#/cartoons">&larr; All Cartoons</a>
+      </div>
+      <h1 style="font-size: clamp(24px, 4vw, 40px);">${escapeHtml(toon.title)}</h1>
+      
+      <div class="toon-full"><img src="${toon.img}" alt="" loading="lazy"></div>
+      <p class="toon-caption">${escapeHtml(toon.caption)}</p>
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>'"]/g, tag => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+  }[tag] || tag));
+}
+
+// Initialize App
+init();
+</script>
+</body>
+</html>
