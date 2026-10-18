@@ -1,432 +1,201 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>GNS Newsroom</title>
-<meta name="description" content="GNS staff portal: write stories, add a cover image and byline, and send them to management for approval.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Fira+Sans+Condensed:wght@700;800&display=swap" rel="stylesheet">
-<style>
-  /* Layout: GNS crimson masthead over a calm working desk; a story form with a sidebar, a review queue of cards, and a preview that looks like the published article. */
-  :root {
-    --brand: #8e1c13; --brand-deep: #6d140d; --on-brand: #ffffff;
-    --bg: #f5f3f1; --surface: #ffffff; --sunk: #efebe8; --ink: #1b1716; --muted: #685f5b; --line: #e2dcd8;
-    --accent: #8e1c13; --focus: #8e1c13;
-    --pending: #2f5597; --pending-bg: #e8eef9; --ok: #1d7347; --ok-bg: #e4f3ea; --warn: #8a5a00; --warn-bg: #fbf0d9;
-    --live: #5b2a86; --live-bg: #f0e8f7; --bad: #a3271b;
-    --font: "Fira Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --display: "Fira Sans Condensed", "Fira Sans", "Arial Narrow", Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #141211; --surface: #1e1b1a; --sunk: #191615; --ink: #f2eeec; --muted: #a79f9b; --line: #352f2d;
-      --accent: #ff8273; --focus: #ff8273;
-      --pending: #9bb8f3; --pending-bg: #1d2638; --ok: #6fd39d; --ok-bg: #16291f; --warn: #e8bd62; --warn-bg: #2c2414;
-      --live: #c9a4ee; --live-bg: #2a1f35; --bad: #ff8a7a; color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #141211; --surface: #1e1b1a; --sunk: #191615; --ink: #f2eeec; --muted: #a79f9b; --line: #352f2d;
-    --accent: #ff8273; --focus: #ff8273;
-    --pending: #9bb8f3; --pending-bg: #1d2638; --ok: #6fd39d; --ok-bg: #16291f; --warn: #e8bd62; --warn-bg: #2c2414;
-    --live: #c9a4ee; --live-bg: #2a1f35; --bad: #ff8a7a; color-scheme: dark;
-  }
-  *, *::before, *::after { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
-  button, input, select, textarea { font: inherit; color: inherit; }
-  button { cursor: pointer; }
-  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  h1, h2, h3 { text-wrap: balance; }
+* "Add to Home Screen" for GNS sites.
+   Shows a small banner on phones (and wherever the browser offers a one-tap install), and a sheet with the
+   right steps for the visitor's device. Any element with [data-install-app] opens the sheet.
+   Settings come from this script tag's data attributes:
+     data-name="GNS+"  data-icon="apple-touch-icon.png"  data-accent="#b5161f"  data-theme="dark|light|auto"
+     data-tagline="..."  data-banner="on|off"  */
+(function () {
+  "use strict";
+  const me = document.currentScript || {};
+  const ds = me.dataset || {};
+  const NAME = ds.name || document.title || "this app";
+  const ICON = ds.icon || "apple-touch-icon.png";
+  const ACCENT = ds.accent || "#b5161f";
+  const THEME = ds.theme || "auto";
+  const TAGLINE = ds.tagline || "Add it to your Home Screen";
+  const KEY = "gns-install-dismissed:" + NAME;
 
-  /* Masthead */
-  .mast { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand); color: var(--on-brand); }
-  .mast-in { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
-  .logo { display: inline-flex; align-items: baseline; gap: 10px; color: inherit; text-decoration: none; }
-  .logo b { font-weight: 800; font-size: 26px; letter-spacing: 0.02em; line-height: 1; }
-  .logo span { font-weight: 500; font-size: 16px; opacity: 0.9; border-left: 1px solid rgba(255,255,255,0.45); padding-left: 10px; }
-  .who { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .who-text { text-align: right; line-height: 1.2; min-width: 0; }
-  .who-text strong { display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .who-text small { font-size: 13px; opacity: 0.85; }
-  .btn-ghost-light { background: transparent; border: 1px solid rgba(255,255,255,0.6); color: #fff; border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 14px; white-space: nowrap; }
-  .btn-ghost-light:hover { background: rgba(255,255,255,0.12); }
-  .tabs { background: var(--brand-deep); }
-  .tabs-in { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
-  .tabs button { background: none; border: 0; color: rgba(255,255,255,0.82); padding: 11px 12px; font-weight: 600; font-size: 15px; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; gap: 8px; align-items: center; }
-  .tabs button[aria-current="page"] { color: #fff; border-bottom-color: #fff; }
-  .count { background: #fff; color: var(--brand); border-radius: 999px; font-size: 12px; font-weight: 800; padding: 1px 7px; font-variant-numeric: tabular-nums; }
+  const ua = navigator.userAgent || "";
+  const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  const iOS = /iPhone|iPad|iPod/.test(ua) || iPadOS;
+  const iPad = /iPad/.test(ua) || iPadOS;
+  const android = /Android/.test(ua);
+  const samsung = /SamsungBrowser/.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|Snapchat|TikTok|GSA\//.test(ua);
+  const iosOther = iOS && /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  const firefox = /Firefox\/|FxiOS/.test(ua);
+  const edge = /Edg(e|A|iOS)?\//.test(ua);
+  const chromium = /Chrome\/|Chromium\//.test(ua) && !samsung;
+  const safariMac = !iOS && /Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg/.test(ua);
+  const mobile = iOS || android;
+  const mq = q => window.matchMedia && window.matchMedia(q).matches;
+  const standalone = () => mq("(display-mode: standalone)") || mq("(display-mode: fullscreen)") || mq("(display-mode: minimal-ui)") || navigator.standalone === true;
 
-  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
-  .page-title { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4.5vw, 40px); margin: 0 0 4px; line-height: 1.05; }
-  .lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+  let deferred = null;   // the browser's own install prompt, when it offers one
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; maybeBanner(150); refreshSheet(); });
+  window.addEventListener("appinstalled", () => { deferred = null; hideBanner(); closeSheet(); dismiss(3650); });
 
-  /* Cards, fields, buttons */
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-  .field { display: grid; gap: 6px; }
-  .field > label, .label { font-weight: 700; font-size: 14px; }
-  .hint { color: var(--muted); font-size: 13px; margin: 0; }
-  input[type=text], input[type=password], select, textarea {
-    width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px;
-  }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--focus); outline-offset: 0; border-color: transparent; }
-  textarea { resize: vertical; line-height: 1.55; }
-  .btn { border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: 15px; border: 1px solid var(--line); background: var(--surface); }
-  .btn:hover { background: var(--sunk); }
-  .btn-primary { background: var(--brand); color: #fff; border-color: var(--brand); }
-  .btn-primary:hover { background: var(--brand-deep); }
-  .btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
-  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .msg { border-radius: 8px; padding: 12px 14px; font-size: 15px; margin: 0 0 16px; }
-  .msg-ok { background: var(--ok-bg); color: var(--ok); }
-  .msg-warn { background: var(--warn-bg); color: var(--warn); }
-  .msg-info { background: var(--pending-bg); color: var(--pending); }
-  .msg strong { color: inherit; }
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+    window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+  }
 
-  /* Sign-in */
-  .signin-wrap { min-height: calc(100vh - 60px); display: grid; place-items: center; padding: 32px 16px; }
-  .signin { width: 100%; max-width: 420px; padding: 28px 24px; display: grid; gap: 16px; }
-  .signin h1 { margin: 0; font-family: var(--display); font-size: 32px; line-height: 1.05; }
-  .signin p { margin: 0; }
-  .err { color: var(--bad); font-size: 14px; font-weight: 600; margin: 0; }
+  /* ---------- styles ---------- */
+  const css = `
+  .gi-root { --gi-accent: ${ACCENT}; --gi-bg: #ffffff; --gi-ink: #121212; --gi-muted: #5d5d5d; --gi-line: rgba(0,0,0,.12); --gi-chip: #f1f1f3; --gi-shadow: 0 18px 50px rgba(0,0,0,.28);
+    font-family: "Fira Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .gi-dark { --gi-bg: #1e1617; --gi-ink: #f6f1ec; --gi-muted: #b6a8a5; --gi-line: rgba(255,255,255,.14); --gi-chip: rgba(255,255,255,.08); --gi-shadow: 0 18px 50px rgba(0,0,0,.6); }
+  @media (prefers-color-scheme: dark) { .gi-auto { --gi-bg: #1c1c1e; --gi-ink: #f2f2f2; --gi-muted: #a8a8a8; --gi-line: rgba(255,255,255,.14); --gi-chip: rgba(255,255,255,.08); --gi-shadow: 0 18px 50px rgba(0,0,0,.6); } }
+  .gi-root[hidden] { display: none !important; }
+  .gi-banner { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); z-index: 28; margin: 0 auto; max-width: 520px;
+    display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 14px; background: var(--gi-bg); color: var(--gi-ink);
+    box-shadow: var(--gi-shadow); border: 1px solid var(--gi-line); animation: giUp .35s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes giUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .gi-banner img { width: 46px; height: 46px; border-radius: 11px; flex: none; }
+  .gi-banner .gi-txt { flex: 1; min-width: 0; line-height: 1.3; }
+  .gi-banner strong { display: block; font-size: 15px; }
+  .gi-banner span { display: block; font-size: 13px; color: var(--gi-muted); }
+  .gi-btn { appearance: none; border: 0; border-radius: 999px; padding: 9px 16px; font-family: inherit; font-weight: 700; font-size: 14px; line-height: 1; background: var(--gi-accent); color: #fff; cursor: pointer; white-space: nowrap; }
+  .gi-btn:hover { filter: brightness(1.08); }
+  .gi-x { appearance: none; border: 0; background: none; color: var(--gi-muted); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; flex: none; }
+  .gi-x:hover { background: var(--gi-chip); color: var(--gi-ink); }
+  .gi-x svg { width: 18px; height: 18px; }
+  .gi-scrim { position: fixed; inset: 0; z-index: 95; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; animation: giFade .2s ease both; }
+  @keyframes giFade { from { opacity: 0; } }
+  .gi-sheet { position: relative; width: min(560px, 100%); max-height: calc(100% - 24px); overflow-y: auto; background: var(--gi-bg); color: var(--gi-ink);
+    border-radius: 18px 18px 0 0; padding: 22px 22px calc(env(safe-area-inset-bottom, 0px) + 22px); box-shadow: var(--gi-shadow); animation: giUp .3s cubic-bezier(.2,.8,.2,1) both; }
+  @media (min-width: 700px) { .gi-scrim { align-items: center; padding: 24px; } .gi-sheet { border-radius: 18px; padding-bottom: 24px; } }
+  .gi-head { display: flex; align-items: center; gap: 14px; margin: 0 40px 18px 0; }
+  .gi-head img { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 4px 14px rgba(0,0,0,.25); flex: none; }
+  .gi-head h2 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 700; }
+  .gi-head p { margin: 3px 0 0; color: var(--gi-muted); font-size: 14px; }
+  .gi-sheet > .gi-x { position: absolute; top: 14px; right: 14px; }
+  .gi-note { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--gi-chip); font-size: 14px; line-height: 1.45; }
+  .gi-install { display: flex; width: 100%; justify-content: center; padding: 14px 18px; font-size: 16px; margin: 0 0 16px; }
+  .gi-or { margin: 0 0 10px; color: var(--gi-muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .gi-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: gi; }
+  .gi-steps li { counter-increment: gi; display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; font-size: 16px; line-height: 1.45; }
+  .gi-steps li::before { content: counter(gi); width: 30px; height: 30px; border-radius: 50%; background: var(--gi-accent); color: #fff; font-weight: 700; font-size: 15px; display: grid; place-items: center; }
+  .gi-steps b { font-weight: 700; }
+  .gi-ico { display: inline-grid; place-items: center; vertical-align: -6px; width: 26px; height: 26px; margin: 0 2px; border-radius: 7px; background: var(--gi-chip); color: var(--gi-accent); }
+  .gi-ico svg { width: 17px; height: 17px; }
+  .gi-dark .gi-ico { color: var(--gi-ink); }
+  @media (prefers-color-scheme: dark) { .gi-auto .gi-ico { color: var(--gi-ink); } }
+  .gi-foot { margin: 18px 0 0; color: var(--gi-muted); font-size: 13px; line-height: 1.45; }
+  @media (prefers-reduced-motion: reduce) { .gi-banner, .gi-sheet, .gi-scrim { animation: none; } }`;
+  const style = document.createElement("style"); style.textContent = css; document.head.appendChild(style);
 
-  /* Write */
-  .write { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 900px) { .write { grid-template-columns: minmax(0, 1fr) 330px; align-items: start; } }
-  .write-main { padding: 20px; display: grid; gap: 16px; }
-  .write-side { display: grid; gap: 16px; }
-  .side-box { padding: 16px; display: grid; gap: 10px; }
-  #f-headline { font-family: var(--display); font-size: 24px; font-weight: 800; }
-  #f-body { min-height: 380px; font-size: 17px; }
-  .meta-row { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
-  .two { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
-  .picker-search { margin-bottom: 2px; }
-  .picker { max-height: 236px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); }
-  .picker label { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
-  .picker label:last-child { border-bottom: 0; }
-  .picker label:has(input:checked) { background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
-  .picker input { accent-color: var(--brand); width: 18px; height: 18px; margin: 0; }
-  .picker .pn { font-weight: 600; font-size: 15px; display: block; }
-  .picker .pt { color: var(--muted); font-size: 13px; display: block; }
-  .picker .none { padding: 12px; color: var(--muted); font-size: 14px; }
-  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: 16px; text-align: center; color: var(--muted); font-size: 14px; display: grid; gap: 8px; place-items: center; }
-  .drop.over { border-color: var(--accent); color: var(--ink); }
-  .cover-prev { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; background: var(--sunk); }
-  .cover-prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .cover-prev button { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; border: 0; border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
-  .send-row { display: grid; gap: 8px; }
+  /* ---------- icons ---------- */
+  const svg = (p, fill) => `<svg viewBox="0 0 24 24" ${fill ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'} aria-hidden="true">${p}</svg>`;
+  const I = {
+    share: svg('<path d="M12 15V3M8 7l4-4 4 4"/><path d="M7 10H5.5A1.5 1.5 0 0 0 4 11.5v8A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 18.5 10H17"/>'),
+    add: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="M12 8v8M8 12h8"/>'),
+    dotsV: svg('<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/>', true),
+    dotsH: svg('<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>', true),
+    menu: svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+    install: svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 7v6M9.5 10.5 12 13l2.5-2.5M8 20h8"/>'),
+    x: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
+  };
+  const ic = k => `<span class="gi-ico">${I[k]}</span>`;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  /* Lists */
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; }
-  .filters button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
-  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-  .filters .n { font-variant-numeric: tabular-nums; opacity: 0.75; }
-  .list { display: grid; gap: 10px; }
-  .item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 14px 16px; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-  .item:hover { border-color: var(--muted); }
-  .item h3 { margin: 0; font-size: 18px; line-height: 1.25; min-width: 0; }
-  .item .sub { grid-column: 1 / 2; color: var(--muted); font-size: 14px; }
-  .item .chip { grid-row: 1; grid-column: 2; align-self: start; }
-  .item .note { grid-column: 1 / -1; font-size: 14px; background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 8px 10px; margin-top: 6px; }
-  .chip { display: inline-block; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
-  .chip.pending { background: var(--pending-bg); color: var(--pending); }
-  .chip.approved { background: var(--ok-bg); color: var(--ok); }
-  .chip.returned { background: var(--warn-bg); color: var(--warn); }
-  .chip.published { background: var(--live-bg); color: var(--live); }
-  .empty { padding: 28px 20px; text-align: center; color: var(--muted); }
-  .empty strong { display: block; color: var(--ink); font-size: 17px; margin-bottom: 4px; }
+  /* ---------- the right steps for this device ---------- */
+  function guide() {
+    const n = esc(NAME);
+    if (iOS) {
+      const note = inApp ? `<p class="gi-note">This page is open inside another app. Open it in <b>Safari</b> first (tap ${ic("dotsH")} or the share menu, then <b>Open in Safari</b>), then follow these steps.</p>` : "";
+      if (iosOther && !inApp) return { note, steps: [
+        `Tap the Share button ${ic("share")} in the address bar${/CriOS/.test(ua) ? " (top right in Chrome)" : ""}.`,
+        `Tap ${ic("add")} <b>Add to Home Screen</b>. If you don't see it, tap <b>More</b> first.`,
+        `Tap <b>Add</b>. ${n} shows up on your Home Screen with its logo.`] };
+      return { note, steps: [
+        iPad ? `Tap the Share button ${ic("share")} at the top of Safari.` : `Tap the Share button ${ic("share")} in Safari's toolbar. Don't see it? Tap ${ic("dotsH")} first, then <b>Share</b>.`,
+        `Scroll down and tap ${ic("add")} <b>Add to Home Screen</b>.`,
+        `Keep <b>Open as Web App</b> on if you see it, then tap <b>Add</b>. ${n} shows up on your Home Screen with its logo.`] };
+    }
+    if (android) {
+      if (samsung) return { steps: [`Tap the menu ${ic("menu")} at the bottom right.`, `Tap <b>Add page to</b>, then <b>Home screen</b>.`, `Tap <b>Add</b>. ${n} shows up on your Home screen with its logo.`] };
+      if (firefox) return { steps: [`Tap the menu ${ic("dotsV")}.`, `Tap <b>Install</b> (or <b>Add to Home screen</b>).`, `Tap <b>Add</b>. ${n} shows up on your Home screen with its logo.`] };
+      return { steps: [`Tap the menu ${ic("dotsV")} at the top right.`, `Tap <b>Add to Home screen</b> (or <b>Install app</b>).`, `Tap <b>Install</b>. ${n} shows up on your Home screen with its logo.`] };
+    }
+    if (safariMac) return { steps: [`In the menu bar, choose <b>File</b> → <b>Add to Dock</b>.`, `Click <b>Add</b>. ${n} opens from your Dock in its own window.`] };
+    if (firefox) return { note: `<p class="gi-note">Firefox can't install websites as apps. Open this page in <b>Chrome</b>, <b>Edge</b> or <b>Safari</b> to install ${n}, or bookmark it here with <b>${/Mac/.test(ua) ? "⌘" : "Ctrl+"}D</b>.</p>`, steps: [] };
+    if (edge) return { steps: [`Open the menu ${ic("dotsH")} at the top right.`, `Choose <b>Apps</b> → <b>Install this site as an app</b>.`, `Click <b>Install</b>. ${n} opens in its own window with its logo.`] };
+    if (chromium) return { steps: [`Click the install button ${ic("install")} at the right end of the address bar.`, `Click <b>Install</b>. ${n} opens in its own window with its logo.`, `No button? Open the menu ${ic("dotsV")}, then <b>Cast, save, and share</b> → <b>Install page as app</b>.`] };
+    return { steps: [`Open your browser's menu.`, `Choose <b>Add to Home Screen</b> or <b>Install</b>.`] };
+  }
 
-  /* Accounts */
-  .acct-grid { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 900px) { .acct-grid { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-  th { font-size: 13px; color: var(--muted); font-weight: 700; }
-  td .small { color: var(--muted); font-size: 13px; }
-  .linkbtn { background: none; border: 0; color: var(--accent); font-weight: 700; font-size: 14px; padding: 4px 0; margin-right: 12px; }
-  .role { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--sunk); border: 1px solid var(--line); }
-  .role.mgmt { background: var(--brand); color: #fff; border-color: var(--brand); }
-  .inactive td { opacity: 0.55; }
-  .pw-row { display: flex; gap: 8px; }
-  .pw-row input { flex: 1; min-width: 0; }
+  /* ---------- sheet ---------- */
+  let scrim = null, lastFocus = null;
+  function themeClass() { return "gi-root " + (THEME === "dark" ? "gi-dark" : THEME === "light" ? "" : "gi-auto"); }
+  function sheetHtml() {
+    const g = guide();
+    const can = !!deferred;
+    const where = mobile ? "Home Screen" : "computer";
+    return `<div class="gi-sheet" role="dialog" aria-modal="true" aria-labelledby="giTitle">
+      <button type="button" class="gi-x" data-gi-close aria-label="Close">${I.x}</button>
+      <div class="gi-head"><img src="${esc(ICON)}" alt=""><div><h2 id="giTitle">Get the ${esc(NAME)} app</h2><p>${standalone() ? "You're already using the app." : `Put ${esc(NAME)} on your ${where}, with its own icon.`}</p></div></div>
+      ${g.note || ""}
+      ${can ? `<button type="button" class="gi-btn gi-install" data-gi-install>Install ${esc(NAME)}</button>${g.steps.length ? `<p class="gi-or">Or do it yourself</p>` : ""}` : ""}
+      ${g.steps.length ? `<ol class="gi-steps">${g.steps.map(s => `<li><span>${s}</span></li>`).join("")}</ol>` : ""}
+      <p class="gi-foot">It opens full screen, like any other app. Your sign-in and settings stay on this device.</p>
+    </div>`;
+  }
+  function openSheet() {
+    if (scrim) return;
+    lastFocus = document.activeElement;
+    scrim = document.createElement("div");
+    scrim.className = themeClass() + " gi-scrim";
+    scrim.innerHTML = sheetHtml();
+    document.body.appendChild(scrim);
+    hideBanner();
+    scrim.querySelector("[data-gi-close]").focus();
+  }
+  function refreshSheet() { if (scrim) scrim.innerHTML = sheetHtml(); }
+  function closeSheet() {
+    if (!scrim) return;
+    scrim.remove(); scrim = null;
+    if (lastFocus && document.contains(lastFocus) && lastFocus.focus) lastFocus.focus();
+  }
+  async function promptInstall() {
+    if (!deferred) return;
+    const e = deferred; deferred = null;
+    try { e.prompt(); const r = await e.userChoice; if (r && r.outcome === "accepted") { closeSheet(); dismiss(3650); return; } } catch (err) {}
+    refreshSheet();
+  }
 
-  /* Preview dialog */
-  .dialog { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.55); overflow-y: auto; padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px 40px; }
-  .dialog-card { max-width: 860px; margin: 0 auto; background: var(--surface); border-radius: 12px; overflow: hidden; }
-  .dialog-bar { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-  .dialog-bar .meta { color: var(--muted); font-size: 13px; flex: 1; min-width: 200px; }
-  .art { padding: 24px clamp(16px, 4vw, 44px) 32px; }
-  .art .kicker { color: var(--accent); font-weight: 700; font-size: 13px; text-align: center; margin: 0 0 8px; }
-  .art h1 { margin: 0 0 12px; text-align: center; text-transform: uppercase; font-weight: 700; font-size: clamp(26px, 4.6vw, 44px); line-height: 1.06; }
-  .art .dek { text-align: center; color: var(--muted); font-size: 18px; margin: 0 auto 18px; max-width: 60ch; }
-  .art .cover { aspect-ratio: 16 / 9; max-width: 100%; background: var(--sunk); border-radius: 4px; overflow: hidden; }
-  .art .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .art .credit { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
-  .art .byline { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 15px; margin: 14px 0 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-  .art .body p { font-size: 18px; line-height: 1.6; margin: 0 0 1em; max-width: 70ch; }
-  .art .body h2 { font-family: var(--display); font-weight: 800; font-size: 24px; margin: 1.4em 0 0.4em; }
-  .art .body blockquote { margin: 1em 0; padding-left: 16px; border-left: 4px solid var(--brand); font-family: var(--display); font-weight: 700; font-size: 22px; }
-  .review { border-top: 1px solid var(--line); padding: 18px clamp(16px, 4vw, 44px) 24px; background: var(--sunk); display: grid; gap: 12px; }
-  .review h2 { margin: 0; font-size: 18px; }
-  .review .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  /* ---------- banner ---------- */
+  let banner = null, bannerTimer = 0;
+  function dismissed() { try { return Number(localStorage.getItem(KEY) || 0) > Date.now(); } catch (e) { return false; } }
+  function dismiss(days) { try { localStorage.setItem(KEY, String(Date.now() + days * 864e5)); } catch (e) {} }
+  function maybeBanner(delay) {
+    if (ds.banner === "off" || standalone() || dismissed() || banner || scrim) return;
+    if (!mobile && !deferred) return;           // on computers, only when the browser can install in one click
+    if (window.GNS_INSTALL_PAUSED) return;      // a page can hold the banner back (for example during sign-in screens)
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => {
+      if (banner || scrim || standalone() || dismissed() || window.GNS_INSTALL_PAUSED) return;
+      banner = document.createElement("div");
+      banner.className = themeClass() + " gi-banner";
+      banner.setAttribute("role", "region"); banner.setAttribute("aria-label", "Get the app");
+      banner.innerHTML = `<img src="${esc(ICON)}" alt=""><div class="gi-txt"><strong>Get the ${esc(NAME)} app</strong><span>${esc(TAGLINE)}</span></div>
+        <button type="button" class="gi-btn" data-gi-open>${deferred ? "Install" : "How"}</button>
+        <button type="button" class="gi-x" data-gi-dismiss aria-label="Not now">${I.x}</button>`;
+      document.body.appendChild(banner);
+    }, delay);
+  }
+  function hideBanner() { clearTimeout(bannerTimer); if (banner) { banner.remove(); banner = null; } }
 
-  @media (max-width: 560px) {
-    .logo span { display: none; }
-    .two { grid-template-columns: 1fr; }
-    .who-text small { display: none; }
-  }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  /* ---------- events ---------- */
+  document.addEventListener("click", e => {
+    const t = e.target;
+    if (t.closest("[data-install-app]")) { e.preventDefault(); openSheet(); return; }
+    if (t.closest("[data-gi-open]")) { if (deferred) promptInstall(); else openSheet(); return; }
+    if (t.closest("[data-gi-dismiss]")) { hideBanner(); dismiss(14); return; }
+    if (t.closest("[data-gi-install]")) { promptInstall(); return; }
+    if (scrim && (t === scrim || t.closest("[data-gi-close]"))) { closeSheet(); dismiss(14); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && scrim) { e.stopPropagation(); closeSheet(); } }, true);
 
-  /* Draft preview: a copy of the main GNS site's article page */
-  .preview-btn-row { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .pv-note { background: var(--pending-bg); color: var(--pending); font-size: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
-  .pv-note strong { color: inherit; }
-  .gp { --gp-brand: #8e1c13; --gp-bg: #ffffff; --gp-ink: #111111; --gp-muted: #5f5f5f; --gp-rule: #e2e2e2; --gp-soft: #f4f4f4; --gp-kicker: #8e1c13;
-        background: var(--gp-bg); color: var(--gp-ink); font-family: "Fira Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .gp { --gp-bg: #141414; --gp-ink: #f2f2f2; --gp-muted: #a8a8a8; --gp-rule: #333; --gp-soft: #1e1e1e; --gp-kicker: #ff6b5e; }
-  }
-  :root[data-theme="dark"] .gp { --gp-bg: #141414; --gp-ink: #f2f2f2; --gp-muted: #a8a8a8; --gp-rule: #333; --gp-soft: #1e1e1e; --gp-kicker: #ff6b5e; }
-  .gp-mast { background: var(--gp-brand); color: #fff; }
-  .gp-bar { padding: 12px 20px; display: flex; align-items: center; gap: 24px; }
-  .gp-logo { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; flex: none; }
-  .gp-logo b { font-weight: 800; font-size: 26px; letter-spacing: 0.02em; }
-  .gp-logo svg { margin-top: 4px; }
-  .gp-nav { display: none; gap: 20px; flex: 1; font-weight: 600; font-size: 15px; }
-  .gp-nav span { padding: 6px 0; border-bottom: 2px solid transparent; white-space: nowrap; }
-  .gp-nav span.on { border-bottom-color: #fff; }
-  @media (min-width: 760px) { .gp-nav { display: flex; } }
-  .gp-article { max-width: 1000px; margin: 0 auto; padding: 24px 20px 40px; }
-  .gp-article h1 { margin: 0 0 22px; font-weight: 700; text-transform: uppercase; font-size: clamp(26px, 5.4vw, 52px); line-height: 1.05; text-align: center; text-wrap: balance; }
-  .gp-article h1.ph, .gp-body .ph { color: var(--gp-muted); font-style: italic; }
-  .gp-dek { text-align: center; font-size: clamp(18px, 2.4vw, 22px); line-height: 1.4; color: var(--gp-muted); margin: -8px auto 22px; max-width: 60ch; }
-  .gp-photo { width: 100%; aspect-ratio: 1899 / 721; overflow: hidden; background: var(--gp-soft); }
-  .gp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .gp-credit { color: var(--gp-muted); font-size: 13px; margin: 6px 0 0; }
-  .gp-meta { display: flex; justify-content: space-between; gap: 16px; margin-top: 14px; color: var(--gp-muted); font-size: 15px; line-height: 1.45; }
-  .gp-meta p { margin: 0; }
-  .gp-tag { white-space: nowrap; }
-  .gp-body { margin-top: 18px; }
-  .gp-body p { font-size: 19px; line-height: 1.5; margin: 0 0 1em; max-width: 75ch; }
-  .gp-body .gp-sub { font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif; font-weight: 800; font-size: clamp(24px, 3.4vw, 30px); line-height: 1.15; margin: 1.5em 0 0.5em; max-width: 75ch; }
-  .gp-body blockquote { margin: 1.2em 0 1.4em; padding: 4px 0 4px 20px; border-left: 5px solid var(--gp-brand); max-width: 75ch; }
-  .gp-body blockquote p { font-family: "Fira Sans Condensed", "Fira Sans", Arial, sans-serif; font-weight: 700; font-size: clamp(22px, 3vw, 28px); line-height: 1.25; margin: 0 0 0.35em; }
-  .gp-body blockquote p:last-child { margin-bottom: 0; }
-  @media (min-width: 700px) { .gp-body p { font-size: 21px; } .gp-meta { font-size: 16px; } }
-  .gp-back { display: inline-block; margin-top: 18px; font-weight: 600; color: var(--gp-kicker); }
-  .gp-foot { background: var(--gp-brand); color: #fff; padding: 18px 20px; font-size: 14px; }
-  .gp-toon { margin: 0; background: var(--gp-soft); border: 1px solid var(--gp-rule); min-height: 160px; display: grid; place-items: center; }
-  .gp-toon img { width: 100%; height: auto; display: block; max-height: 85vh; object-fit: contain; }
-  .gp-toon .ph { color: var(--gp-muted); font-style: italic; padding: 40px 16px; }
-  .gp-caption { font-size: clamp(19px, 2.4vw, 22px); line-height: 1.45; text-align: center; font-style: italic; margin: 18px auto 0; max-width: 60ch; overflow-wrap: anywhere; }
-  .gp-caption.ph { color: var(--gp-muted); }
-  .art .cover.toon { aspect-ratio: auto; border: 1px solid var(--line); }
-  .art .cover.toon img { height: auto; max-height: 80vh; object-fit: contain; }
-  .art .toon-caption { text-align: center; font-style: italic; font-size: 19px; margin: 14px auto 0; max-width: 60ch; }
-  .toon-drop { min-height: 180px; }
-  .toon-prev { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--sunk); }
-  .toon-prev img { width: 100%; height: auto; max-height: 520px; object-fit: contain; display: block; }
-  .toon-prev button { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; border: 0; border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 600; }
-  /* Editorial board */
-  .board { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 900px) { .board { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
-  .item:disabled { opacity: 0.6; cursor: default; }
-  .chip.open { background: var(--sunk); color: var(--ink); border: 1px solid var(--line); }
-  .chip.claimed { background: var(--pending-bg); color: var(--pending); }
-  .chip.sent { background: var(--live-bg); color: var(--live); }
-  .checks { border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); }
-  .checks label { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 15px; }
-  .checks label:last-child { border-bottom: 0; }
-  .checks label:has(input:checked) { background: var(--surface); color: var(--muted); text-decoration: line-through; }
-  .checks input { accent-color: var(--brand); width: 18px; height: 18px; margin: 2px 0 0; }
-  .fixed-meta { display: grid; gap: 4px; font-size: 14px; }
-  .fixed-meta span { color: var(--muted); }
-  .tips { display: grid; }
-  .tip { font-size: 14px; border-top: 1px solid var(--line); padding: 10px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .tip small { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; margin-bottom: 2px; white-space: normal; }
-  .tip .linkbtn { font-size: 12px; margin: 0; padding: 0; }
-</style>
-
-<header class="mast">
-  <div class="mast-in">
-    <a class="logo" href="#top" aria-label="GNS Newsroom"><b>GNS</b><span>Newsroom</span></a>
-    <div class="who" id="who" hidden>
-      <div class="who-text"><strong id="who-name"></strong><small id="who-title"></small></div>
-      <button type="button" class="btn-ghost-light" id="signout">Sign out</button>
-    </div>
-  </div>
-  <nav class="tabs" id="tabs" aria-label="Newsroom sections" hidden><div class="tabs-in" id="tabs-in"></div></nav>
-</header>
-
-<!-- Sign in -->
-<section id="v-signin" class="signin-wrap">
-  <form class="card signin" id="signin-form" novalidate>
-    <h1>Staff sign in</h1>
-    <p class="hint">Write stories and send them to management for approval before they run on GNS.</p>
-    <div class="field"><label for="si-user">Username</label><input type="text" id="si-user" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
-    <div class="field"><label for="si-pass">Password</label><input type="password" id="si-pass" autocomplete="current-password"></div>
-    <p class="err" id="si-err" role="alert" hidden></p>
-    <button type="submit" class="btn btn-primary" id="si-btn">Sign in</button>
-    <p class="hint" id="si-status">Connecting to the newsroom…</p>
-  </form>
-  <form class="card signin" id="setup-form" novalidate hidden style="margin-top:16px">
-    <h1>Create the first account</h1>
-    <p class="hint">No accounts exist yet. This creates the first management account. This form disappears once it exists.</p>
-    <div class="field"><label for="su-name">Full name</label><input type="text" id="su-name" maxlength="80"></div>
-    <div class="field"><label for="su-user">Username</label><input type="text" id="su-user" maxlength="32" autocapitalize="none" spellcheck="false"></div>
-    <div class="field"><label for="su-pass">Password</label><input type="password" id="su-pass" maxlength="64" autocomplete="new-password"></div>
-    <p class="err" id="setup-err" role="alert" hidden></p>
-    <button type="submit" class="btn btn-primary">Create management account</button>
-  </form>
-</section>
-
-<main id="v-app" hidden></main>
-
-<div class="dialog" id="dialog" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
-  <div class="dialog-card" id="dialog-card"></div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script>
-/* ============ constants ============ */
-const SECTIONS = ["U.S.", "Politics", "Global Affairs", "Elections", "Business", "Opinion"];
-const STATUS = { pending: "Waiting for review", approved: "Approved, queued for GNS", returned: "Sent back", published: "Live on GNS" };
-const SALT = "gns-newsroom|";
-const SESSION_KEY = "gns-newsroom-session";
-const COVER_BUDGET = 190000;   // chars of data URL; db documents max out at 256 KiB
-
-/* ============ helpers ============ */
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const fmt = iso => { try { return new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) + " ET"; } catch (e) { return iso || ""; } };
-const words = s => (String(s).trim().match(/\S+/g) || []).length;
-const store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
-  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
-};
-
-function sha256Fallback(bytes) {
-  const K = [], H = [], frac = x => ((x - Math.floor(x)) * 4294967296) | 0;
-  for (let n = 2, c = 0; c < 64; n++) { let p = true; for (let d = 2; d * d <= n; d++) if (n % d === 0) { p = false; break; } if (p) { if (c < 8) H[c] = frac(Math.sqrt(n)); K[c] = frac(Math.cbrt(n)); c++; } }
-  const len = bytes.length, buf = new Uint8Array(((len + 9 + 63) >> 6) << 6); buf.set(bytes); buf[len] = 0x80;
-  const dv = new DataView(buf.buffer); dv.setUint32(buf.length - 4, (len * 8) >>> 0); dv.setUint32(buf.length - 8, Math.floor(len / 536870912));
-  const W = new Int32Array(64), r = (x, n) => (x >>> n) | (x << (32 - n));
-  for (let o = 0; o < buf.length; o += 64) {
-    for (let i = 0; i < 16; i++) W[i] = dv.getInt32(o + i * 4);
-    for (let i = 16; i < 64; i++) { const a = W[i - 15], b = W[i - 2]; W[i] = (W[i - 16] + (r(a, 7) ^ r(a, 18) ^ (a >>> 3)) + W[i - 7] + (r(b, 17) ^ r(b, 19) ^ (b >>> 10))) | 0; }
-    let [a, b, c, d, e, f, g, h] = H;
-    for (let i = 0; i < 64; i++) { const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + W[i]) | 0; const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0; h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0; }
-    [a, b, c, d, e, f, g, h].forEach((v, i) => { H[i] = (H[i] + v) | 0; });
-  }
-  return H.map(x => (x >>> 0).toString(16).padStart(8, "0")).join("");
-}
-async function sha256(text) {
-  const bytes = new TextEncoder().encode(text);
-  try { if (window.crypto && crypto.subtle) { const d = await crypto.subtle.digest("SHA-256", bytes); return Array.from(new Uint8Array(d), b => b.toString(16).padStart(2, "0")).join(""); } } catch (e) {}
-  return sha256Fallback(bytes);
-}
-const hashFor = (u, p) => sha256(SALT + u.trim().toLowerCase() + "|" + p);
-
-function bodyHtml(text) {
-  const blocks = String(text).replace(/\r/g, "").split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
-  return blocks.map(b => {
-    if (b.startsWith("## ")) return `<h2>${esc(b.slice(3))}</h2>`;
-    if (b.startsWith("> ")) return `<blockquote>${esc(b.replace(/^> ?/gm, ""))}</blockquote>`;
-    return `<p>${esc(b).replace(/\n/g, "<br>")}</p>`;
-  }).join("");
-}
-function errText(e) {
-  const code = e && e.code;
-  if (code === "permission-denied") return "The database refused this. Check the Firestore rules in your Firebase project.";
-  if (code === "resource-exhausted") return "The newsroom's free database limit is used up. Try again later.";
-  return "That didn't go through. Check your connection and try again.";
-}
-
-/* ============ state ============ */
-const S = { db: null, userCap: null, canWrite: null, accounts: {}, accountsReady: false, me: null, subs: [], view: "write", filter: "pending",
-            unsubSubs: null, batch: null, eds: [], tips: [], tipDraft: "", unsubBoard: [], unsubEds: null, edOpen: null, cover: null, coverKept: false, editingId: null, openId: null, flash: null };
-
-/* ============ boot ============ */
-(async function boot() {
-  let db = null;
-  try {
-    const cfg = window.GNS_FIREBASE;
-    if (window.firebase && cfg && cfg.projectId && !String(cfg.projectId).startsWith("YOUR")) { firebase.initializeApp(cfg); db = firebase.firestore(); }
-  } catch (e) { db = null; }
-  S.db = db;
-  if (!db) {
-    $("si-status").textContent = "The newsroom isn't connected to its database yet. Add your Firebase settings to firebase-config.js.";
-    $("si-btn").disabled = true;
-    return;
-  }
-  S.userCap = null;
-  db.collection("accounts").onSnapshot(snap => {
-    const map = {};
-    snap.docs.forEach(d => { if (d.exists) map[d.id] = { id: d.id, ...d.data() }; });
-    S.accounts = map; S.accountsReady = true;
-    const none = !Object.keys(map).length;
-    $("si-status").textContent = none ? "No accounts exist yet. Create the first management account below." : "";
-    $("setup-form").hidden = !none || !!S.me;
-    if (S.me) {
-      const fresh = map[S.me.id];
-      if (!fresh || fresh.active === false || fresh.hash !== S.me.hash) return signOut("Your account was changed by management. Sign in again.");
-      S.me = fresh; renderChrome(); if (!isTyping()) render();
-      else refreshPicker();
-    } else {
-      const sess = store.get(SESSION_KEY);
-      if (sess && map[sess.u] && map[sess.u].active !== false && map[sess.u].hash === sess.h) enter(map[sess.u]);
-    }
-  }, e => { $("si-status").textContent = errText(e); });
+  window.GNSInstall = { open: openSheet, close: closeSheet, standalone, showBanner: () => maybeBanner(0), hideBanner };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => maybeBanner(2500)); else maybeBanner(2500);
 })();
-
-/* ============ sign in / out ============ */
-$("signin-form").addEventListener("submit", async ev => {
-  ev.preventDefault();
-  const u = $("si-user").value.replace(/\s+/g, ""), p = $("si-pass").value;   // usernames never contain spaces
-  const err = $("si-err"); err.hidden = true;
-  if (!u || !p) { err.textContent = "Enter your username and password."; err.hidden = false; return; }
-  if (!S.accountsReady) { err.textContent = "Still connecting. Try again in a moment."; err.hidden = false; return; }
-  const acct = S.accounts[u.toLowerCase()];
-  let h = await hashFor(u, p);
-  if (acct && acct.hash !== h && p.trim() !== p) h = await hashFor(u, p.trim());   // a space pasted in with the password
-  if (!acct || acct.hash !== h) { err.textContent = "That username and password don't match a GNS account."; err.hidden = false; $("si-pass").value = ""; return; }
-  if (acct.active === false) { err.textContent = "This account has been deactivated. Talk to management."; err.hidden = false; return; }
-  store.set(SESSION_KEY, { u: acct.id, h: acct.hash });
-  enter(acct);
-});
-$("signout").addEventListener("click", () => signOut());
-
-$("setup-form").addEventListener("submit", async ev => {
-  ev.preventDefault();
-  const err = $("setup-err"); err.hidden = true;
-  const name = $("su-name").value.trim(), user = $("su-user").value.trim(), pass = $("su-pass").value;
-  const bad = !name ? "Add your full name." : !/^[A-Za-z0-9_.-]{3,32}$/.test(user) ? "Usernames are 3 to 32 letters, numbers, dots, dashes or underscores." : pass.length < 8 ? "Passwords need at least 8 characters." : Object.keys(S.accounts).length ? "Accounts already exist. Sign in instead." : "";
-  if (bad) { err.textContent = bad; err.hidden = false; return; }
-  try {
-    await S.db.doc("accounts/" + user.toLowerCase()).set({ username: user, name, title: "Management", role: "management", hash: await hashFor(user, pass), active: true, createdAt: new Date().toISOString(), createdBy: "setup" });
-    $("setup-form").hidden = true; $("si-status").textContent = "Account created. Sign in above.";
-  } catch (e) { err.textContent = errText(e); err.hidden = false; }
-});
-
-async function enter(acct) {
-  S.me = acct; S.flash = null;
-  S.view = isMgmt() ? "review" : "write";
-  $("v-signin").hidden = true; $("v-app").hidden = false; $("who").hidden = false; $("tabs").hidden = false;
-  if (S.userCap && S.userCap.can) { try { S.canWrite = await S.userCap.can("data.write"); } catch (e) { S.canWrite = null; } }
-  subscribeSubs(); subscribeBoard();
-  renderChrome(); render();
-}
-function signOut(message) {
-  store.del(SESSION_KEY);
-  if (S.unsubSubs) { S.unsubSubs(); S.unsubSubs = null; }
-  unsubscribeBoard();
-  Object.assign(S, { me: null, subs: [], batch: null, eds: [], tips: [], edOpen: null, cover: null, editingId: null, openId: null, flash: null, filter: "pending" });
-  closeDialog();
-  $("v-app").hidden = true; $("who").hidden = true; $("tabs").hidden = true; $("v-signin").hidden = false;
-  $("si-pass").value = "";
-  const err = $("si-err"); err.hidden = !message; err.textContent = message || "";
-}
-const isMgmt = () => S.me && S.me.role === "management";
-const isForm = () => S.view === "write" 
