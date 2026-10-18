@@ -5,59 +5,117 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GNS</title>
 <style>
-html.gns-locked,html.gns-locked body{overflow:hidden!important}
-#gns-permanent-notice{position:fixed;inset:0;z-index:2147483647;background:#080808;color:#fff;display:flex;align-items:center;justify-content:center;overflow:auto;padding:24px;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;text-align:center}
-.gns-notice-inner{width:100%;max-width:850px}
-.gns-message{font-size:clamp(24px,5vw,52px);font-weight:800;line-height:1.25;margin:0}
-#gns-until{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
-#gns-signin[hidden],#gns-message[hidden]{display:none!important}
-#gns-signin h1{font-size:clamp(28px,5vw,44px);margin:0 0 24px}
-#gns-password-form{display:flex;flex-direction:column;gap:14px;max-width:360px;margin:auto}
-#gns-password-form input,#gns-password-form button{font:inherit;font-size:18px;padding:14px;border-radius:8px;box-sizing:border-box;width:100%}
-#gns-password-form input{background:#fff;color:#111;border:1px solid #aaa}
-#gns-password-form button{background:#fff;color:#111;border:0;font-weight:700;cursor:pointer}
-#gns-error{color:#ff9999;font-size:16px;min-height:20px}
+html.gns-locked,html.gns-locked body {
+  overflow: hidden !important;
+}
+#gns-permanent-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: #080808;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#gns-signin {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+#gns-signin[hidden] {
+  display: none !important;
+}
+#gns-signin h1 {
+  font-size: 32px;
+  margin-bottom: 24px;
+}
+#gns-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+#gns-password-form input,
+#gns-password-form button {
+  font: inherit;
+  font-size: 18px;
+  padding: 14px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+#gns-password-form input {
+  background: #fff;
+  color: #111;
+  border: 1px solid #aaa;
+}
+#gns-password-form button {
+  background: #fff;
+  color: #111;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+#gns-error {
+  color: #ff9999;
+  font-size: 16px;
+  min-height: 20px;
+}
 </style>
 </head>
 <body>
-<div id="gns-permanent-notice" role="main">
-  <div class="gns-notice-inner">
-    <p class="gns-message" id="gns-message">What’s done is done. I will not be returning because I’m so idiotic. <button id="gns-until" type="button" aria-label="Enter password">until</button></p>
-    <section id="gns-signin" hidden>
-      <h1>Enter the password</h1>
-      <form id="gns-password-form">
-        <input id="gns-password-input" type="password" placeholder="Password" autocomplete="off" required>
-        <button type="submit">Sign in</button>
-        <div id="gns-error" role="alert"></div>
-      </form>
-    </section>
-  </div>
+
+<div id="gns-permanent-notice">
+  <section id="gns-signin" hidden>
+    <h1>Enter the password</h1>
+    <form id="gns-password-form">
+      <input id="gns-password-input" type="password"
+        placeholder="Password" autocomplete="off" required>
+      <button type="submit">Sign in</button>
+      <div id="gns-error" role="alert"></div>
+    </form>
+  </section>
 </div>
+
 <script>
-(function(){
-  var key='gns-site-unlocked';
-  var notice=document.getElementById('gns-permanent-notice');
-  if(sessionStorage.getItem(key)==='yes'){
+(function() {
+  var key = 'gns-site-unlocked';
+  var notice = document.getElementById('gns-permanent-notice');
+  var signin = document.getElementById('gns-signin');
+
+  if (sessionStorage.getItem(key) === 'yes') {
     notice.remove();
     return;
   }
+
   document.documentElement.classList.add('gns-locked');
-  document.getElementById('gns-until').addEventListener('click',function(){
-    document.getElementById('gns-message').hidden=true;
-    document.getElementById('gns-signin').hidden=false;
+
+  notice.addEventListener('click', function() {
+    signin.hidden = false;
     document.getElementById('gns-password-input').focus();
   });
-  document.getElementById('gns-password-form').addEventListener('submit',function(e){
+
+  signin.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  document.getElementById('gns-password-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    if(document.getElementById('gns-password-input').value==='password123'){
-      sessionStorage.setItem(key,'yes');
+
+    if (document.getElementById('gns-password-input').value === 'password123') {
+      sessionStorage.setItem(key, 'yes');
       document.documentElement.classList.remove('gns-locked');
       notice.remove();
-    }else{
-      document.getElementById('gns-error').textContent='Incorrect password. Please try again.';
+    } else {
+      document.getElementById('gns-error').textContent =
+        'Incorrect password. Please try again.';
     }
   });
 })();
 </script>
+
 </body>
 </html>
