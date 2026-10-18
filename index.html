@@ -1,102 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GNS</title>
-<style>
-html, body {
-  margin: 0;
-  min-height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
-}
-#gns-password-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
-  background: #080808;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  box-sizing: border-box;
-}
-#gns-password-screen[hidden] {
-  display: none !important;
-}
-#gns-login {
-  width: 100%;
-  max-width: 360px;
-  text-align: center;
-}
-#gns-login h1 {
-  font-size: 32px;
-  margin-bottom: 24px;
-}
-#gns-login form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-#gns-login input, #gns-login button {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 14px;
-  font-size: 18px;
-  border-radius: 8px;
-}
-#gns-login input {
-  background: white;
-  color: #111;
-  border: 1px solid #aaa;
-}
-#gns-login button {
-  background: white;
-  color: #111;
-  border: 0;
-  font-weight: bold;
-  cursor: pointer;
-}
-#gns-error {
-  color: #ff9999;
-}
-</style>
-</head>
-<body>
+# GNS | America’s Number One Source for News
 
-<div id="gns-password-screen">
-  <div id="gns-login">
-    <h1>Enter the password</h1>
-    <form id="gns-form">
-      <input id="gns-password" type="password" placeholder="Password" autocomplete="off" required>
-      <button type="submit">Sign in</button>
-      <div id="gns-error" role="alert"></div>
-    </form>
-  </div>
-</div>
+A responsive, cable-news-style homepage and article template built with HTML, CSS, and vanilla JavaScript. 
 
-<script>
-(function() {
-  const key = 'gns-site-unlocked';
-  const screen = document.getElementById('gns-password-screen');
+## Features
+* **Sticky Masthead & Navigation:** Adapts seamlessly across desktop and mobile viewports with collapsible drawers and quick-access section strips.
+* **Dark Mode Support:** Automatic color scheme switching based on system preferences (`prefers-color-scheme`) with manual toggle capability.
+* **Dynamic Views:** Includes layouts for homepage feeds, section indexes, full-length articles, and editorial cartoon grids.
 
-  if (sessionStorage.getItem(key) === 'yes') {
-    screen.hidden = true;
-  }
+## Getting Started
 
-  document.getElementById('gns-form').addEventListener('submit', function(event) {
-    event.preventDefault();
+To run this project locally, simply clone the repository and open `index.html` in your web browser:
 
-    if (document.getElementById('gns-password').value === 'password123') {
-      sessionStorage.setItem(key, 'yes');
-      screen.hidden = true;
-    } else {
-      document.getElementById('gns-error').textContent = 'Incorrect password. Please try again.';
-    }
-  });
-})();
-</script>
-
-</body>
-</html>
+```bash
+git clone [https://github.com/your-username/gns-news-website.git](https://github.com/your-username/gns-news-website.git)
+cd gns-news-website
+# Open index.html in your browser of choice
